@@ -1,0 +1,18 @@
+/* Thème sombre - My_School */
+:root {
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #94a3b8;
+    --content-bg: #111827;
+    --card-border: #1f2937;
+    --text-dark: #f1f5f9;
+    --text-muted: #94a3b8;
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+}
+body { background: #111827; color: #f1f5f9; }
+.card, .topbar, .app-footer { background: #1f2937; border-color: #374151; }
+.card-header { background: #1f2937; border-color: #374151; }
+.table thead th { background: #111827; color: #94a3b8; }
+.table tbody tr:hover { background: #1f2937; }
+.chat-bubble.received { background: #374151; color: #f1f5f9; }
+.chat-users .user-item:hover, .chat-users .user-item.active { background: #1f2937; }

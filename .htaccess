@@ -1,0 +1,30 @@
+# My_School - Configuration Apache
+
+Options -Indexes
+DirectoryIndex index.php
+
+# Protection des fichiers sensibles
+<FilesMatch "\.(sql|log|ini|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+# Redirection vers HTTPS (décommenter en production)
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Empêcher l'accès aux fichiers de configuration
+RewriteEngine On
+RewriteRule ^config(/|$) - [F,L]
+RewriteRule ^includes(/|$) - [F,L]
+
+# En-têtes de sécurité
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Désactiver l'affichage des erreurs en production
+php_flag display_errors Off
+php_value error_reporting E_ALL

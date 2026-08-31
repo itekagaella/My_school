@@ -1,0 +1,203 @@
+<?php
+require_once __DIR__ . '/../../includes/auth.php';
+require_role(['prof']);
+$user = current_user();
+$page_title = 'Gestion des présences';
+$active_menu = 'presences';
+
+$prof = prepareQuery(
+    'SELECT * FROM profs WHERE user_id = :uid',
+    ['uid'=>$user['id']]
+)->fetch();
+
+if (!$prof) {
+    set_flash('error', 'Profil professeur introuvable.');
+    header('Location: ' . BASE_URL);
+    exit;
+}
+
+$prof_id = $prof['id'];
+
+$matieres = prepareQuery(
+    "SELECT m.*, c.nom_classe FROM matieres m
+    LEFT JOIN classes c ON c.id = m.classe_id
+    WHERE m.prof_id=:pid
+    ORDER BY m.nom_matiere",
+    ['pid'=>$prof_id]
+)->fetchAll();
+
+$selected_matiere = post('matiere_id') ?: get('matiere_id', '');
+$selected_date = post('date_presence') ?: get('date_presence', date('Y-m-d'));
+$presences_existantes = [];
+$eleves = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_presences') {
+    if (!csrf_verify(post('csrf_token'))) {
+        set_flash('error', 'Token CSRF invalide.');
+        header('Location: ' . BASE_URL . 'client/prof/presences.php');
+        exit;
+    }
+
+    $m_id = (int)post('matiere_id');
+    $date_p = clean_input(post('date_presence'));
+    $presences_data = $_POST['presences'] ?? [];
+
+    foreach ($presences_data as $eid => $data) {
+        $statut = clean_input($data['statut'] ?? 'present');
+        $motif = clean_input($data['motif'] ?? '');
+        if (!in_array($statut, ['present','absent','retard','excuse'])) $statut = 'present';
+
+        prepareQuery(
+            "INSERT INTO presences (eleve_id, prof_id, date_presence, statut, motif)
+            VALUES (:eid, :pid, :date, :statut, :motif)
+            ON CONFLICT (eleve_id, date_presence)
+            DO UPDATE SET statut = EXCLUDED.statut, motif = EXCLUDED.motif, prof_id = EXCLUDED.prof_id",
+            [
+                'eid'=>$eid, 'pid'=>$prof_id, 'date'=>$date_p,
+                'statut'=>$statut, 'motif'=>$motif
+            ]
+        );
+    }
+
+    log_activity('presences.saisie', "Présences saisies matière #{$m_id}, date={$date_p}");
+    set_flash('success', 'Présences enregistrées avec succès.');
+    header('Location: ' . BASE_URL . 'client/prof/presences.php?matiere_id=' . $m_id . '&date_presence=' . urlencode($date_p));
+    exit;
+}
+
+if ($selected_matiere) {
+    $matiere_info = prepareQuery(
+        "SELECT m.*, c.nom_classe FROM matieres m
+        LEFT JOIN classes c ON c.id = m.classe_id
+        WHERE m.id=:mid AND m.prof_id=:pid",
+        ['mid'=>$selected_matiere, 'pid'=>$prof_id]
+    )->fetch();
+
+    if ($matiere_info && $matiere_info['classe_id']) {
+        $eleves = prepareQuery(
+            "SELECT * FROM eleves WHERE classe_id=:cid ORDER BY nom, prenom",
+            ['cid'=>$matiere_info['classe_id']]
+        )->fetchAll();
+
+        $existing = prepareQuery(
+            "SELECT * FROM presences WHERE eleve_id IN (SELECT id FROM eleves WHERE classe_id=:cid) AND date_presence=:date",
+            ['cid'=>$matiere_info['classe_id'], 'date'=>$selected_date]
+        )->fetchAll();
+        foreach ($existing as $ex) {
+            $presences_existantes[$ex['eleve_id']] = $ex;
+        }
+    }
+}
+
+require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/sidebar_client.php';
+?>
+<?php display_flash(); ?>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Gestion des présences</h5>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="<?= BASE_URL ?>client/prof/presences.php" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold small">Matière</label>
+                <select name="matiere_id" class="form-select" required>
+                    <option value="">-- Sélectionner --</option>
+                    <?php foreach ($matieres as $m): ?>
+                        <option value="<?= $m['id'] ?>" <?= $selected_matiere == $m['id'] ? 'selected' : '' ?>>
+                            <?= e($m['nom_matiere']) ?> (<?= e($m['code']) ?>) - <?= e($m['nom_classe'] ?? '') ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small">Date</label>
+                <input type="date" name="date_presence" class="form-control" value="<?= e($selected_date) ?>" required>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-magnifying-glass me-1"></i>Charger</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php if ($selected_matiere && !empty($eleves)): ?>
+    <form method="POST" action="<?= BASE_URL ?>client/prof/presences.php">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="save_presences">
+        <input type="hidden" name="matiere_id" value="<?= e($selected_matiere) ?>">
+        <input type="hidden" name="date_presence" value="<?= e($selected_date) ?>">
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fa-solid fa-list me-2"></i>
+                    Élèves - <?= e($matiere_info['nom_matiere'] ?? '') ?> (<?= e($matiere_info['nom_classe'] ?? '') ?>)
+                    <span class="text-muted fw-normal">| <?= date('d/m/Y', strtotime($selected_date)) ?></span>
+                </h6>
+                <span class="badge bg-info"><?= count($eleves) ?> élève(s)</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Matricule</th>
+                                <th>Nom complet</th>
+                                <th style="width:180px">Statut</th>
+                                <th>Motif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($eleves as $i => $el):
+                                $existing_p = $presences_existantes[$el['id']] ?? null;
+                                $current_statut = $existing_p ? $existing_p['statut'] : 'present';
+                            ?>
+                                <tr>
+                                    <td class="text-muted"><?= $i + 1 ?></td>
+                                    <td><span class="badge bg-secondary"><?= e($el['matricule']) ?></span></td>
+                                    <td><?= e($el['nom'] . ' ' . $el['prenom']) ?></td>
+                                    <td>
+                                        <select name="presences[<?= $el['id'] ?>][statut]" class="form-select form-select-sm">
+                                            <?php
+                                            $statuts = ['present'=>'Présent','absent'=>'Absent','retard'=>'Retard','excuse'=>'Excusé'];
+                                            $statut_colors = ['present'=>'success','absent'=>'danger','retard'=>'warning','excuse'=>'info'];
+                                            foreach ($statuts as $val => $lbl):
+                                            ?>
+                                                <option value="<?= $val ?>" <?= $current_statut === $val ? 'selected' : '' ?>><?= $lbl ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="presences[<?= $el['id'] ?>][motif]"
+                                            class="form-control form-control-sm"
+                                            value="<?= $existing_p ? e($existing_p['motif']) : '' ?>"
+                                            placeholder="Motif (optionnel)">
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Enregistrer les présences
+                </button>
+            </div>
+        </div>
+    </form>
+<?php elseif ($selected_matiere): ?>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            <i class="fa-solid fa-users-slash fs-1 mb-3 d-block"></i>
+            Aucun élève trouvé pour cette matière
+        </div>
+    </div>
+<?php endif; ?>
+
+<?php require_once __DIR__ . '/../../includes/footer_content.php'; ?>
+<?php require_once __DIR__ . '/../../includes/footer.php'; ?>

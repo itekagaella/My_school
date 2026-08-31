@@ -1,0 +1,26 @@
+# Artefacts temporaires
+.~lock.*.docx#
+*.docx#
+Thumbs.db
+.DS_Store
+
+# Fichiers de configuration locaux / secrets
+.env
+*.local
+
+# Journal / logs
+*.log
+
+# Sauvegardes générées
+admin/parametres/*.sql
+*.dump
+*.sql.gz
+
+# Fichiers uploadés (contenu binaire/privé)
+assets/uploads/*
+!assets/uploads/.htaccess
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: myschool_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: my_school
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Le script d'initialisation est exécuté UNIQUEMENT au premier démarrage
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5433:5432"   # 5433 pour ne pas entrer en conflit avec un Postgres local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d my_school"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build: .
+    container_name: myschool_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Variables lues par config/database.php
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: my_school
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    volumes:
+      # Montage du code pour développement sans rebuild
+      - ./:/var/www/html
+    ports:
+      - "8081:80"
+    networks:
+      default:
+
+volumes:
+  db_data:

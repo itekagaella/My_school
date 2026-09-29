@@ -322,7 +322,10 @@ function upload_file(array $file, string $subdir = 'documents'): array
     if (!is_dir($dir)) mkdir($dir, 0777, true);
 
     $safe_name = preg_replace('/[^A-Za-z0-9.\-]/', '_', pathinfo($file['name'], PATHINFO_FILENAME));
-    $newName = $safe_name . '_' . random_bytes(8) . '.' . $ext;
+    // bin2hex obligatoire : random_bytes() renvoie des octets bruts, qui
+    // produisaient des noms de fichiers illisibles et faisaient échouer
+    // l'insertion en base (« invalid byte sequence for encoding "UTF8" »).
+    $newName = $safe_name . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     $path = $dir . '/' . $newName;
 
     if (!move_uploaded_file($file['tmp_name'], $path)) {

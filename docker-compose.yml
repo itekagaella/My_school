@@ -36,6 +36,17 @@ services:
     volumes:
       # Montage du code pour développement sans rebuild
       - ./:/var/www/html
+    # Le montage ci-dessus masque le chown fait dans le Dockerfile : Apache
+    # tourne en www-data et ne peut alors plus écrire dans assets/uploads
+    # (« Impossible de stocker le fichier » à l'upload). On recrée donc les
+    # dossiers attendus et on les rend accessibles à chaque démarrage.
+    command:
+      - bash
+      - -c
+      - |
+        mkdir -p /var/www/html/assets/uploads/{documents,avatars,clubs,admin,backups}
+        chmod -R 0777 /var/www/html/assets/uploads
+        exec apache2-foreground
     ports:
       - "8081:80"
     networks:

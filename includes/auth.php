@@ -121,30 +121,44 @@ function start_user_session(int $userId): void
     $_SESSION['login_time'] = time();
 
     // Enregistrer un token de session en base
+    // L'expiration est calculée par PostgreSQL (NOW() + intervalle) car elle est
+    // ensuite comparée à NOW() : mélanger date() PHP et NOW() SQL rend la session
+    // invalide dès que les fuseaux de PHP et de la BDD diffèrent.
     $token = generate_token();
-    $expires = date('Y-m-d H:i:s', time() + SESSION_TIMEOUT);
     prepareQuery(
         'INSERT INTO sessions_utilisateur (user_id, token, ip_address, user_agent, expires_at)
-         VALUES (:uid, :token, :ip, :ua, :exp)',
+         VALUES (:uid, :token, :ip, :ua, NOW() + make_interval(secs => :ttl))',
         [
             'uid' => $userId,
             'token' => hash('sha256', $token),
             'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
             'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            'exp' => $expires,
+            'ttl' => SESSION_TIMEOUT,
         ]
     );
+    $_SESSION['session_token'] = hash('sha256', $token);
     log_activity('auth.login', 'Connexion réussie');
 }
 
 /**
- * Vérifie le code 2FA saisi
+ * Vérifie le code 2FA saisi (avec limite de tentatives anti brute-force)
  */
 function verify_2fa(string $code): array
 {
     if (!isset($_SESSION['pending_2fa'])) {
         return [false, 'Session 2FA expirée.'];
     }
+
+    // Limite de tentatives 2FA (5 max / fenêtre de 5 min)
+    if (empty($_SESSION['2fa_attempts'])) $_SESSION['2fa_attempts'] = ['count' => 0, 'start' => time()];
+    if ($_SESSION['2fa_attempts']['count'] >= MAX_LOGIN_ATTEMPTS) {
+        if (time() - $_SESSION['2fa_attempts']['start'] < LOCKOUT_MINUTES * 60) {
+            $remaining = ceil((LOCKOUT_MINUTES * 60 - (time() - $_SESSION['2fa_attempts']['start'])) / 60);
+            return [false, "Trop de tentatives 2FA. Réessayez dans {$remaining} minute(s)."];
+        }
+        $_SESSION['2fa_attempts'] = ['count' => 0, 'start' => time()];
+    }
+
     $userId = $_SESSION['pending_2fa'];
     $user = prepareQuery(
         'SELECT * FROM utilisateurs WHERE id = :id',
@@ -152,12 +166,13 @@ function verify_2fa(string $code): array
     )->fetch();
 
     if (!$user || !$user['dernier_code_otp'] || $user['dernier_code_exp'] < date('Y-m-d H:i:s', time())) {
-        unset($_SESSION['pending_2fa']);
+        unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts']);
         return [false, 'Code expiré. Veuillez vous reconnecter.'];
     }
 
     if (!password_verify($code, $user['dernier_code_otp'])) {
-        return [false, 'Code de vérification incorrect.'];
+        $_SESSION['2fa_attempts']['count']++;
+        return [false, 'Code de vérification incorrect (tentative ' . $_SESSION['2fa_attempts']['count'] . '/' . MAX_LOGIN_ATTEMPTS . ').'];
     }
 
     // Code validé
@@ -165,18 +180,31 @@ function verify_2fa(string $code): array
         'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
         ['id' => $userId]
     );
-    unset($_SESSION['pending_2fa']);
+    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts']);
 
     start_user_session($userId);
     return [true, 'Authentification à deux facteurs réussie.'];
 }
 
 /**
- * Déconnecte l'utilisateur
+ * Déconnecte l'utilisateur (révoque aussi le token session en base)
  */
 function logout(string $raison = 'Déconnexion manuelle'): void
 {
-    if (isset($_SESSION['user_id'])) log_activity('auth.logout', $raison);
+    if (isset($_SESSION['user_id'])) {
+        log_activity('auth.logout', $raison);
+        // Révoquer le token de session en base
+        if (isset($_SESSION['session_token'])) {
+            try {
+                prepareQuery(
+                    'DELETE FROM sessions_utilisateur WHERE user_id = :uid AND token = :token',
+                    ['uid' => $_SESSION['user_id'], 'token' => $_SESSION['session_token']]
+                );
+            } catch (Exception $e) {
+                error_log('Erreur révocation session : ' . $e->getMessage());
+            }
+        }
+    }
     $flash = ['type' => 'info', 'message' => $raison];
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
@@ -201,6 +229,24 @@ function is_logged_in(): bool
 }
 
 /**
+ * Vérifie que le token de session en base est toujours valide
+ */
+function validate_session_token(): bool
+{
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['session_token'])) return false;
+    try {
+        $row = prepareQuery(
+            'SELECT COUNT(*) AS nb FROM sessions_utilisateur
+             WHERE user_id = :uid AND token = :token AND expires_at > NOW()',
+            ['uid' => $_SESSION['user_id'], 'token' => $_SESSION['session_token']]
+        )->fetch();
+        return (int)($row['nb'] ?? 0) > 0;
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
  * Récupère l'utilisateur courant (avec cache)
  */
 function current_user(): ?array
@@ -208,8 +254,12 @@ function current_user(): ?array
     if (!is_logged_in()) return null;
     static $user = false;
     if ($user === false) {
+        // Valider le token de session en base (révocation possible côté serveur)
+        if (!validate_session_token()) {
+            logout('Session expirée');
+        }
         $user = prepareQuery(
-            'SELECT * FROM utilisateurs WHERE id = :id',
+            'SELECT * FROM utilisateurs WHERE id = :id AND actif = TRUE',
             ['id' => $_SESSION['user_id']]
         )->fetch();
         if (!$user) {

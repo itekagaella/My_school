@@ -5,10 +5,18 @@ $user = current_user();
 $page_title = 'Communications';
 $active_menu = 'communications';
 
+$type_filter = clean_input(get('type', ''));
+$clause = "statut='publie' AND (destinataires='tous' OR destinataires LIKE '%role:prof%')";
+$params = [];
+if (in_array($type_filter, ['annonce','alerte','info'], true)) {
+    $clause .= ' AND type = :t';
+    $params['t'] = $type_filter;
+}
 $communications = prepareQuery(
     "SELECT * FROM communications
-    WHERE statut='publie' AND (destinataires='tous' OR destinataires LIKE '%role:prof%')
-    ORDER BY date_publication DESC"
+    WHERE $clause
+    ORDER BY date_publication DESC",
+    $params
 )->fetchAll();
 
 $type_icon = ['annonce'=>'fa-megaphone','alerte'=>'fa-triangle-exclamation','info'=>'fa-circle-info'];
@@ -19,12 +27,20 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="mb-0"><i class="fa-solid fa-bullhorn me-2"></i>Communications</h5>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h5 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h5>
+    <form method="get" action="" class="d-flex gap-2">
+        <select name="type" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            <option value="annonce" <?= $type_filter==='annonce'?'selected':'' ?>>Annonce</option>
+            <option value="alerte" <?= $type_filter==='alerte'?'selected':'' ?>>Alerte</option>
+            <option value="info" <?= $type_filter==='info'?'selected':'' ?>>Info</option>
+        </select>
+    </form>
 </div>
 
 <?php if (empty($communications)): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center text-muted py-5">
             <i class="fa-solid fa-bullhorn-slash fs-1 mb-3 d-block"></i>
             Aucune communication disponible
@@ -34,7 +50,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     <div class="row g-3">
         <?php foreach ($communications as $comm): ?>
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-start">
                             <div class="flex-shrink-0 rounded-circle bg-<?= $type_color[$comm['type']] ?? 'info' ?> bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:48px;height:48px;">

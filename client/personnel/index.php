@@ -34,73 +34,49 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <?php display_flash(); ?>
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-user-graduate text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Élèves</div>
-                        <div class="fs-4 fw-bold"><?= $nb_eleves ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-blue">
+            <div>
+                <div class="stat-label">Élèves</div>
+                <div class="stat-number"><?= $nb_eleves ?></div>
             </div>
+            <i class="fa-solid fa-user-graduate stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-chalkboard-user text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Professeurs</div>
-                        <div class="fs-4 fw-bold"><?= $nb_profs ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-green">
+            <div>
+                <div class="stat-label">Professeurs</div>
+                <div class="stat-number"><?= $nb_profs ?></div>
             </div>
+            <i class="fa-solid fa-chalkboard-user stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-school text-info"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Classes</div>
-                        <div class="fs-4 fw-bold"><?= $nb_classes ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-purple">
+            <div>
+                <div class="stat-label">Classes</div>
+                <div class="stat-number"><?= $nb_classes ?></div>
             </div>
+            <i class="fa-solid fa-school stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-clipboard-check text-warning"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Présences du jour</div>
-                        <div class="fs-4 fw-bold"><?= $nb_presences ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-red">
+            <div>
+                <div class="stat-label">Présences du jour</div>
+                <div class="stat-number"><?= $nb_presences ?></div>
             </div>
+            <i class="fa-solid fa-clipboard-check stat-icon"></i>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-folder-open me-2"></i>Documents disponibles</h6>
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-folder-open me-2"></i>Documents disponibles</span>
             </div>
             <div class="card-body">
                 <div class="d-flex align-items-center">
@@ -117,9 +93,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-bullhorn me-2"></i>Dernières communications</h6>
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-bullhorn me-2"></i>Dernières communications</span>
             </div>
             <div class="list-group list-group-flush">
                 <?php if (empty($dernieres_comms)): ?>
@@ -133,7 +109,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                             <i class="fa-solid <?= $type_icon[$comm['type']] ?? 'fa-info-circle' ?> text-<?= $type_color[$comm['type']] ?? 'info' ?> me-2 mt-1"></i>
                             <div class="flex-grow-1">
                                 <div class="fw-semibold"><?= e($comm['titre']) ?></div>
-                                <small class="text-muted"><?= mb_substr($comm['contenu'],0,80) ?><?= mb_strlen($comm['contenu'])>80?'...':'' ?></small>
+                                <small class="text-muted"><?= e(mb_substr($comm['contenu'],0,80)) ?><?= mb_strlen($comm['contenu'])>80?'...':'' ?></small>
                                 <div><small class="text-muted"><?= date('d/m/Y H:i', strtotime($comm['date_publication'])) ?></small></div>
                             </div>
                         </div>

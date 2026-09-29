@@ -36,9 +36,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </form>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-bottom">
-        <h6 class="mb-0"><i class="fa-solid fa-file me-2"></i>Documents disponibles (<?= count($documents) ?>)</h6>
+<div class="card">
+    <div class="card-header">
+        <span><i class="fa-solid fa-file me-2"></i>Documents disponibles (<?= count($documents) ?>)</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -82,7 +82,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                             <td class="small text-muted"><?= e($doc['description'] ?? '-') ?></td>
                             <td class="small text-nowrap"><?= date('d/m/Y', strtotime($doc['created_at'])) ?></td>
                             <td class="text-end text-nowrap">
-                                <a href="<?= BASE_URL ?>admin/documents/download.php?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-success" title="Télécharger"><i class="fa-solid fa-download"></i> Télécharger</a>
+                                <a href="<?= BASE_URL ?>client/documents/download.php?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-success" title="Télécharger"><i class="fa-solid fa-download"></i> Télécharger</a>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>

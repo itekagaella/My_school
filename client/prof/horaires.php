@@ -72,7 +72,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 </div>
 
 <?php if (empty($horaires)): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center text-muted py-5">
             <i class="fa-solid fa-calendar-xmark fs-1 mb-3 d-block"></i>
             Aucun horaire trouvé
@@ -85,9 +85,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
             if (empty($cours_jour)) continue;
         ?>
             <div class="col-lg-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-header bg-primary bg-opacity-10 border-bottom">
-                        <h6 class="mb-0 text-primary"><i class="fa-solid fa-calendar-day me-2"></i><?= e($jour) ?></h6>
+                        <span class="text-primary"><i class="fa-solid fa-calendar-day me-2"></i><?= e($jour) ?></span>
                     </div>
                     <div class="list-group list-group-flush">
                         <?php foreach ($cours_jour as $c): ?>

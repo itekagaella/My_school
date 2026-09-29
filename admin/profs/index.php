@@ -117,7 +117,10 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                 <a href="view.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-info" title="Voir"><i class="fa-solid fa-eye"></i></a>
                                 <?php if ($canEdit): ?>
                                 <a href="edit.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="fa-solid fa-pen"></i></a>
-                                <a href="archive.php?id=<?= $p['id'] ?>&action=archive" class="btn btn-sm btn-outline-warning" title="Archiver" onclick="return confirmDelete('Archiver ce professeur ?')"><i class="fa-solid fa-box-archive"></i></a>
+                                <form method="post" action="archive.php?id=<?= $p['id'] ?>&action=archive" class="d-inline">
+                                    <?= csrf_field() ?>
+                                    <button class="btn btn-sm btn-outline-warning" title="Archiver" onclick="return confirmDelete('Archiver ce professeur ?')"><i class="fa-solid fa-box-archive"></i></button>
+                                </form>
                                 <?php endif; ?>
                             </td>
                         </tr>

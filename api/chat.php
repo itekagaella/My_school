@@ -37,9 +37,15 @@ if ($action === 'messages') {
 
 if ($action === 'send' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
+    $token = $input['csrf_token'] ?? '';
+    if (!csrf_verify($token)) {
+        echo json_encode(['ok' => false, 'error' => 'Session expirée']);
+        exit;
+    }
     $receiver = (int)($input['receiver_id'] ?? 0);
     $message = trim($input['message'] ?? '');
     if (!$message) { echo json_encode(['ok' => false, 'error' => 'Message vide']); exit; }
+    if (mb_strlen($message) > 5000) { echo json_encode(['ok' => false, 'error' => 'Message trop long']); exit; }
     prepareQuery(
         'INSERT INTO messages_chat (sender_id, receiver_id, message) VALUES (:s, :r, :m)',
         ['s'=>$user['id'], 'r'=>$receiver > 0 ? $receiver : null, 'm'=>$message]);

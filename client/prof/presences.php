@@ -42,10 +42,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $date_p = clean_input(post('date_presence'));
     $presences_data = $_POST['presences'] ?? [];
 
+    // Vérifier que la matière appartient bien à ce professeur
+    $matiere_ok = prepareQuery(
+        'SELECT COUNT(*) AS nb FROM matieres WHERE id = :mid AND prof_id = :pid',
+        ['mid' => $m_id, 'pid' => $prof_id]
+    )->fetch();
+    if ((int)($matiere_ok['nb'] ?? 0) === 0) {
+        set_flash('error', 'Matière invalide ou non attribuée à ce professeur.');
+        header('Location: ' . BASE_URL . 'client/prof/presences.php');
+        exit;
+    }
+
     foreach ($presences_data as $eid => $data) {
         $statut = clean_input($data['statut'] ?? 'present');
         $motif = clean_input($data['motif'] ?? '');
         if (!in_array($statut, ['present','absent','retard','excuse'])) $statut = 'present';
+
+        // Vérifier que l'élève appartient à la même classe que la matière
+        $eleve_ok = prepareQuery(
+            'SELECT COUNT(*) AS nb FROM eleves e
+             JOIN matieres m ON m.classe_id = e.classe_id
+             WHERE e.id = :eid AND m.id = :mid',
+            ['eid' => $eid, 'mid' => $m_id]
+        )->fetch();
+        if ((int)($eleve_ok['nb'] ?? 0) === 0) continue;
 
         prepareQuery(
             "INSERT INTO presences (eleve_id, prof_id, date_presence, statut, motif)
@@ -98,7 +118,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     <h5 class="mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Gestion des présences</h5>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
+<div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="<?= BASE_URL ?>client/prof/presences.php" class="row g-3 align-items-end">
             <div class="col-md-5">
@@ -130,13 +150,13 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         <input type="hidden" name="matiere_id" value="<?= e($selected_matiere) ?>">
         <input type="hidden" name="date_presence" value="<?= e($selected_date) ?>">
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
                     <i class="fa-solid fa-list me-2"></i>
                     Élèves - <?= e($matiere_info['nom_matiere'] ?? '') ?> (<?= e($matiere_info['nom_classe'] ?? '') ?>)
                     <span class="text-muted fw-normal">| <?= date('d/m/Y', strtotime($selected_date)) ?></span>
-                </h6>
+                </span>
                 <span class="badge bg-info"><?= count($eleves) ?> élève(s)</span>
             </div>
             <div class="card-body p-0">
@@ -183,7 +203,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                     </table>
                 </div>
             </div>
-            <div class="card-footer bg-white border-top text-end">
+            <div class="card-footer border-top text-end">
                 <button type="submit" class="btn btn-primary">
                     <i class="fa-solid fa-floppy-disk me-1"></i>Enregistrer les présences
                 </button>
@@ -191,7 +211,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         </div>
     </form>
 <?php elseif ($selected_matiere): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center text-muted py-5">
             <i class="fa-solid fa-users-slash fs-1 mb-3 d-block"></i>
             Aucun élève trouvé pour cette matière

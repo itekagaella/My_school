@@ -22,13 +22,28 @@ $moyenne = 0;
 $r = prepareQuery('SELECT sp_calculer_moyenne(:eid) AS moy', ['eid'=>$eleve_id])->fetch();
 $moyenne = $r['moy'] ?? 0;
 
+$matiere_filter = clean_input(get('matiere', ''));
+$params = ['eid' => $eleve_id];
+if ($matiere_filter !== '') {
+    $params['mid'] = (int)$matiere_filter;
+}
+
 $notes = prepareQuery(
     "SELECT n.*, m.nom_matiere, m.code AS matiere_code
      FROM notes n
      JOIN matieres m ON m.id = n.matiere_id
-     WHERE n.eleve_id = :eid
+     WHERE n.eleve_id = :eid" . ($matiere_filter !== '' ? ' AND n.matiere_id = :mid' : '') . "
      ORDER BY n.date_evaluation DESC, n.id DESC",
-    ['eid'=>$eleve_id]
+    $params
+)->fetchAll();
+
+$matieres_eleve = prepareQuery(
+    "SELECT DISTINCT m.id, m.nom_matiere, m.code
+     FROM notes n
+     JOIN matieres m ON m.id = n.matiere_id
+     WHERE n.eleve_id = :eid
+     ORDER BY m.nom_matiere",
+    ['eid' => $eleve_id]
 )->fetchAll();
 
 $moyennes_par_matiere = prepareQuery(
@@ -48,58 +63,52 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 
 <div class="row g-3 mb-4">
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-chart-line text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Moyenne générale</div>
-                        <div class="fs-4 fw-bold"><?= number_format((float)$moyenne, 2) ?>/20</div>
-                    </div>
-                </div>
+        <div class="stat-card stat-blue">
+            <div>
+                <div class="stat-label">Moyenne générale</div>
+                <div class="stat-number" style="font-size:22px;"><?= number_format((float)$moyenne, 2) ?><small>/20</small></div>
             </div>
+            <i class="fa-solid fa-chart-line stat-icon"></i>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-file-pen text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Nombre de notes</div>
-                        <div class="fs-4 fw-bold"><?= count($notes) ?></div>
-                    </div>
-                </div>
+        <div class="stat-card stat-green">
+            <div>
+                <div class="stat-label">Nombre de notes</div>
+                <div class="stat-number"><?= count($notes) ?></div>
             </div>
+            <i class="fa-solid fa-file-pen stat-icon"></i>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-book text-info"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Matières évaluées</div>
-                        <div class="fs-4 fw-bold"><?= count($moyennes_par_matiere) ?></div>
-                    </div>
-                </div>
+        <div class="stat-card stat-purple">
+            <div>
+                <div class="stat-label">Matières évaluées</div>
+                <div class="stat-number"><?= count($moyennes_par_matiere) ?></div>
             </div>
+            <i class="fa-solid fa-book stat-icon"></i>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-file-pen me-2"></i>Toutes mes notes</h6>
-            </div>
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fa-solid fa-file-pen me-2"></i>Toutes mes notes</span>
+            <?php if (!empty($matieres_eleve)): ?>
+                <form method="get" action="" class="d-flex gap-2">
+                    <select name="matiere" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Toutes les matières</option>
+                        <?php foreach ($matieres_eleve as $m): ?>
+                            <option value="<?= $m['id'] ?>" <?= $matiere_filter===(string)$m['id']?'selected':'' ?>><?= e($m['nom_matiere']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+            <?php endif; ?>
+        </div>
+    </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
@@ -138,9 +147,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Récapitulatif par matière</h6>
+        <div class="card">
+            <div class="card-header">
+                <span><i class="fa-solid fa-list-check me-2"></i>Récapitulatif par matière</span>
             </div>
             <div class="list-group list-group-flush">
                 <?php if (empty($moyennes_par_matiere)): ?>

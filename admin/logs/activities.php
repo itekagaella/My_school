@@ -21,21 +21,22 @@ $orderDir = get('dir', 'DESC') === 'ASC' ? 'ASC' : 'DESC';
 $where = [];
 $params = [];
 if ($search !== '') {
-    $where[] = '(LOWER(j.action) LIKE :s OR LOWER(j.details) LIKE :s OR LOWER(COALESCE(u.nom,\'\')) LIKE :s)';
-    $where['s'] = '%' . strtolower($search) . '%';
+    $where[] = '(LOWER(j.action) LIKE :s OR LOWER(j.details) LIKE :s OR LOWER(COALESCE(u.nom,\'\') || \' \' || COALESCE(u.prenom,\'\')) LIKE :s)';
+    $params['s'] = '%' . strtolower($search) . '%';
 }
 if ($user_id > 0) {
     $where[] = 'j.user_id = :uid';
     $params['uid'] = $user_id;
 }
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-// Corriger : les params utilisent :s avec WHERE multiple - utiliser replacage
+$orderWhitelist = ['date_action', 'action', 'user_id'];
+if (!in_array($orderBy, $orderWhitelist)) $orderBy = 'date_action';
 
 $activities = prepareQuery(
     "SELECT j.*, u.nom, u.prenom, u.email, u.role
      FROM journal_activites j LEFT JOIN utilisateurs u ON u.id = j.user_id
-     ORDER BY j.date_action $orderDir LIMIT 200"
-)->fetchAll();
+     $whereSql ORDER BY j.$orderBy $orderDir LIMIT 200"
+, $params)->fetchAll();
 
 // ---- Historique des connexions ----
 $connections = prepareQuery(

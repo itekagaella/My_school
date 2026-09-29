@@ -29,10 +29,10 @@ function client_menu_item(string $key, string $label, string $icon, string $href
 <aside class="sidebar sidebar-client" id="sidebar">
     <div class="sidebar-header">
         <a href="<?= BASE_URL . $role_base[$role] ?>/index.php" class="sidebar-brand">
-            <i class="fa-solid fa-graduation-cap"></i>
+            <span class="grad-cap"><i class="fa-solid fa-graduation-cap"></i></span>
             <span class="brand-text">My_School</span>
         </a>
-        <button class="btn btn-link sidebar-toggle" id="sidebarToggle">
+        <button class="sidebar-toggle" id="sidebarToggle">
             <i class="fa-solid fa-bars"></i>
         </button>
     </div>

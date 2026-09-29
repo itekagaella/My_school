@@ -44,7 +44,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="card border-0 shadow-sm mb-4">
+<div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-auto">
@@ -60,9 +60,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-bottom">
-        <h6 class="mb-0"><i class="fa-solid fa-calendar-days me-2"></i>Emploi du temps</h6>
+<div class="card">
+    <div class="card-header">
+        <span><i class="fa-solid fa-calendar-days me-2"></i>Emploi du temps</span>
     </div>
     <div class="card-body p-0">
         <?php if (empty($horaires)): ?>

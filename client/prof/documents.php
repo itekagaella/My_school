@@ -5,8 +5,24 @@ $user = current_user();
 $page_title = 'Documents';
 $active_menu = 'documents';
 
+$clause = "d.statut = 'actif' AND (d.id IN (SELECT document_id FROM document_partages WHERE user_id = :uid) OR d.id NOT IN (SELECT document_id FROM document_partages))";
+$params = ['uid' => $user['id']];
+
+$search = clean_input(get('search', ''));
+if ($search !== '') {
+    $clause .= ' AND LOWER(d.nom_fichier) LIKE :s';
+    $params['s'] = '%' . strtolower($search) . '%';
+}
+
 $documents = prepareQuery(
-    "SELECT * FROM documents WHERE statut='actif' ORDER BY created_at DESC"
+    "SELECT d.*,
+        COALESCE(d.description, '') AS description,
+        u.nom AS auteur_nom, u.prenom AS auteur_prenom
+     FROM documents d
+     LEFT JOIN utilisateurs u ON u.id = d.auteur_id
+     WHERE $clause
+     ORDER BY d.created_at DESC",
+    $params
 )->fetchAll();
 
 $type_icon = [
@@ -26,12 +42,16 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="mb-0"><i class="fa-solid fa-folder-open me-2"></i>Documents</h5>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h5 class="mb-0"><i class="fa-solid fa-folder-open me-2 text-primary"></i>Documents</h5>
+    <form method="get" action="" class="d-flex gap-2">
+        <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher un document...">
+        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </form>
 </div>
 
 <?php if (empty($documents)): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center text-muted py-5">
             <i class="fa-solid fa-folder-open fs-1 mb-3 d-block"></i>
             Aucun document disponible
@@ -40,23 +60,23 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <?php else: ?>
     <div class="row g-3">
         <?php foreach ($documents as $doc):
-            $ext = strtolower(pathinfo($doc['nom_fichier'] ?? $doc['titre'] ?? '', PATHINFO_EXTENSION));
+            $ext = strtolower(pathinfo($doc['nom_fichier'], PATHINFO_EXTENSION));
         ?>
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-start">
                             <div class="flex-shrink-0 rounded bg-<?= $type_color[$ext] ?? 'secondary' ?> bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:48px;height:48px;">
                                 <i class="fa-solid <?= $type_icon[$ext] ?? 'fa-file' ?> text-<?= $type_color[$ext] ?? 'secondary' ?> fs-5"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 fw-semibold"><?= e($doc['titre']) ?></h6>
+                                <h6 class="mb-1 fw-semibold"><?= e($doc['nom_fichier']) ?></h6>
                                 <?php if (!empty($doc['description'])): ?>
                                     <p class="text-muted small mb-2"><?= e(mb_substr($doc['description'], 0, 100)) ?><?= mb_strlen($doc['description'] ?? '') > 100 ? '...' : '' ?></p>
                                 <?php endif; ?>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <small class="text-muted"><i class="fa-solid fa-calendar me-1"></i><?= date('d/m/Y', strtotime($doc['created_at'])) ?></small>
-                                    <a href="<?= BASE_URL ?>admin/documents/download.php?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-primary">
+                                    <a href="<?= BASE_URL ?>client/documents/download.php?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-primary">
                                         <i class="fa-solid fa-download me-1"></i>Télécharger
                                     </a>
                                 </div>

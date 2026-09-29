@@ -426,20 +426,19 @@ DECLARE
     v_user_id INT;
     v_eleve_id INT;
     v_matricule VARCHAR(20);
-    v_annee VARCHAR(9);
+    v_annee INT;
     v_seq INT;
 BEGIN
-    -- Récupérer l'année scolaire de la classe
-    SELECT annee_scolaire INTO v_annee FROM classes WHERE id = p_classe_id;
-    IF v_annee IS NULL THEN
+    -- Vérifier que la classe existe
+    IF NOT EXISTS (SELECT 1 FROM classes WHERE id = p_classe_id) THEN
         RAISE EXCEPTION 'Classe inexistante';
     END IF;
 
-    -- Générer matricule: ANNEE + séquence
-    SELECT EXTRACT(YEAR FROM CURRENT_DATE) INTO v_annee;
-    SELECT COALESCE(MAX(CAST(SUBSTRING(matricule FROM 7) AS INT)), 0) + 1
+    -- Générer matricule: ANNEE + séquence (corrigé: position correcte après 'ELV-YYYY-')
+    SELECT EXTRACT(YEAR FROM CURRENT_DATE)::INT INTO v_annee;
+    SELECT COALESCE(MAX(CAST(SUBSTRING(matricule FROM 10) AS INT)), 0) + 1
     INTO v_seq FROM eleves;
-    v_matricule := 'ELV-' || v_annee || '-' || LPAD(v_seq::TEXT, 4, '0');
+    v_matricule := 'ELV-' || v_annee::TEXT || '-' || LPAD(v_seq::TEXT, 4, '0');
 
     -- Transaction atomique
     BEGIN
@@ -588,10 +587,15 @@ DECLARE
     v_jour VARCHAR(10);
     v_debut TIME;
     v_fin TIME;
+    v_salle VARCHAR(20);
 BEGIN
-    SELECT classe_id, prof_id, jour, heure_debut, heure_fin
-    INTO v_classe_id, v_prof_id, v_jour, v_debut, v_fin
+    SELECT classe_id, prof_id, jour, heure_debut, heure_fin, salle
+    INTO v_classe_id, v_prof_id, v_jour, v_debut, v_fin, v_salle
     FROM horaires WHERE id = p_horaire_id;
+
+    IF v_classe_id IS NULL THEN
+        RAISE EXCEPTION 'Horaire introuvable';
+    END IF;
 
     -- Vérifier conflit de salle/classe/prof (chevauchement des plages horaires)
     SELECT COUNT(*) INTO v_conflit
@@ -601,7 +605,8 @@ BEGIN
       AND statut = 'publie'
       AND heure_debut < v_fin
       AND heure_fin > v_debut
-      AND (classe_id = v_classe_id OR prof_id = v_prof_id);
+      AND (classe_id = v_classe_id OR prof_id = v_prof_id
+           OR (v_salle IS NOT NULL AND salle = v_salle));
 
     IF v_conflit > 0 THEN
         RAISE EXCEPTION 'Conflit d''horaire détecté';
@@ -776,7 +781,7 @@ ON CONFLICT DO NOTHING;
 -- Mot de passe par défaut : admin123 (à changer)
 INSERT INTO utilisateurs (nom, prenom, email, password_hash, role)
 VALUES ('Administrateur', 'Système', 'admin@myschool.edu',
-        '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin')
+        '$2y$10$/sAsnSU14vn1rPAUeQB/UeJrPNhRpQmYCPP2uIfVcNyJGRPk5ztnC', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- Paramètres système par défaut

@@ -80,7 +80,7 @@ function send_notifications(int $commId, array $destinataires, string $titre, st
         } elseif (strpos($dest, 'classe:') === 0) {
             $classeId = (int)substr($dest, 7);
             $users = prepareQuery(
-                'SELECT DISTINCT u.id FROM utilisateurs u JOIN eleves e ON e.utilisateur_id = u.id WHERE e.classe_id = :cid AND u.actif = TRUE',
+                'SELECT DISTINCT u.id FROM utilisateurs u JOIN eleves e ON e.user_id = u.id WHERE e.classe_id = :cid AND u.actif = TRUE',
                 ['cid' => $classeId]
             )->fetchAll();
             foreach ($users as $u) $userIds[] = $u['id'];

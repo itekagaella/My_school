@@ -12,11 +12,13 @@ if (!defined('BASE_URL')) {
     $appDir = rtrim(str_replace('\\', '/', dirname(__DIR__)), '/');
 
     $relativeToDocRoot = '';
-    if ($docRoot !== '' && strpos($appDir, $docRoot) === 0) {
-        $relativeToDocRoot = '/' . ltrim(substr($appDir, strlen($docRoot)), '/');
+    if ($docRoot !== '' && $appDir !== '' && strpos($appDir . '/', $docRoot . '/') === 0) {
+        $relativeToDocRoot = rtrim(str_replace('\\', '/', substr($appDir, strlen($docRoot))), '/');
     }
 
     $base = $scheme . '://' . $host . $relativeToDocRoot . '/';
+    // Normalise les doubles barres du chemin sans toucher au "://" du schéma
+    $base = preg_replace('#(^[a-z]+://[^/]+)/{2,}#i', '$1/', $base);
     define('BASE_URL', $base);
 }
 define('ROOT_PATH', dirname(__DIR__) . '/');
@@ -66,5 +68,26 @@ define('MAIL_PASSWORD', '');
 define('MAIL_FROM', 'no-reply@myschool.edu');
 define('MAIL_FROM_NAME', 'My_School');
 
-// Clé de chiffrement (à changer en production)
-define('ENCRYPTION_KEY', 'changez_cette_cle_secrete_chaque_production');
+// Clé de chiffrement (à changer en production - surchargeable via .env)
+// Charger .env si disponible (le fichier database.php le fait aussi, mais ici
+// c'est nécessaire pour que la clé soit disponible dès config.php)
+if (is_file(__DIR__ . '/../.env') && getenv('ENCRYPTION_KEY') === false && !array_key_exists('ENCRYPTION_KEY', $_ENV)) {
+    $envLines = file(__DIR__ . '/../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $envLine) {
+        $envLine = trim($envLine);
+        if (strpos($envLine, 'ENCRYPTION_KEY=') === 0) {
+            $val = trim(substr($envLine, 15));
+            if (strlen($val) >= 2 && (($val[0] === '"' && substr($val, -1) === '"') || ($val[0] === "'" && substr($val, -1) === "'"))) {
+                $val = substr($val, 1, -1);
+            }
+            putenv('ENCRYPTION_KEY=' . $val);
+            $_ENV['ENCRYPTION_KEY'] = $val;
+            break;
+        }
+    }
+}
+if (getenv('ENCRYPTION_KEY') !== false && getenv('ENCRYPTION_KEY') !== '') {
+    define('ENCRYPTION_KEY', getenv('ENCRYPTION_KEY'));
+} else {
+    define('ENCRYPTION_KEY', 'changez_cette_cle_secrete_chaque_production');
+}

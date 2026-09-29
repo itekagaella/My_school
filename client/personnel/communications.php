@@ -16,8 +16,16 @@ if (!$pers) {
     exit;
 }
 
+$type_filter = clean_input(get('type', ''));
+$clause = "statut='publie' AND (destinataires='tous' OR destinataires LIKE '%role:personnel%')";
+$params = [];
+if (in_array($type_filter, ['annonce','alerte','info'], true)) {
+    $clause .= ' AND type = :t';
+    $params['t'] = $type_filter;
+}
 $communications = prepareQuery(
-    "SELECT * FROM communications WHERE statut='publie' ORDER BY date_publication DESC"
+    "SELECT * FROM communications WHERE $clause ORDER BY date_publication DESC",
+    $params
 )->fetchAll();
 
 $type_icon = ['annonce'=>'fa-megaphone','alerte'=>'fa-triangle-exclamation','info'=>'fa-circle-info'];
@@ -29,8 +37,20 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h5 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h5>
+    <form method="get" action="" class="d-flex gap-2">
+        <select name="type" class="form-select" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            <option value="annonce" <?= $type_filter==='annonce'?'selected':'' ?>>Annonce</option>
+            <option value="alerte" <?= $type_filter==='alerte'?'selected':'' ?>>Alerte</option>
+            <option value="info" <?= $type_filter==='info'?'selected':'' ?>>Info</option>
+        </select>
+    </form>
+</div>
+
 <?php if (empty($communications)): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center py-5">
             <i class="fa-solid fa-bullhorn fa-3x text-muted mb-3"></i>
             <div class="text-muted">Aucune communication disponible</div>
@@ -44,7 +64,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
             $label = $type_label[$comm['type']] ?? 'Info';
         ?>
             <div class="col-md-6 col-xl-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex align-items-start mb-2">
                             <span class="badge bg-<?= $color ?> me-2">

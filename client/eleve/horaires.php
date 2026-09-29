@@ -58,8 +58,8 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </form>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fa-solid fa-school me-2"></i><?= e($eleve['nom_classe'] ?? 'Ma classe') ?></span>
         <span class="badge bg-primary"><?= count($horaires) ?> créneau(x)</span>
     </div>

@@ -4,7 +4,7 @@ Options -Indexes
 DirectoryIndex index.php
 
 # Protection des fichiers sensibles
-<FilesMatch "\.(sql|log|ini|htaccess)$">
+<FilesMatch "\.(sql|log|ini|htaccess|env)$">
     Require all denied
 </FilesMatch>
 
@@ -28,3 +28,4 @@ RewriteRule ^includes(/|$) - [F,L]
 # Désactiver l'affichage des erreurs en production
 php_flag display_errors Off
 php_value error_reporting E_ALL
+php_flag output_buffering On

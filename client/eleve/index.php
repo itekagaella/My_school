@@ -39,12 +39,12 @@ $nb_absences = prepareQuery(
     ['eid'=>$eleve_id]
 )->fetch()['nb'] ?? 0;
 
-$jour_actuel = strftime('%A', strtotime('today'));
+$jour_actuel = date('l', strtotime('today'));
 $jour_map = [
     'Monday'=>'Lundi','Tuesday'=>'Mardi','Wednesday'=>'Mercredi',
     'Thursday'=>'Jeudi','Friday'=>'Vendredi','Saturday'=>'Samedi','Sunday'=>'Dimanche'
 ];
-$jour_fr = $jour_map[$jour_actuel] ?? '';
+$jour_fr = $jour_map[$jour_actuel] ?? date('l', strtotime('today'));
 
 $prochain_cours = null;
 if ($classe_id && $jour_fr) {
@@ -80,78 +80,55 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <?php display_flash(); ?>
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-book text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Matières</div>
-                        <div class="fs-4 fw-bold"><?= $nb_matieres ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-blue">
+            <div>
+                <div class="stat-label">Matières</div>
+                <div class="stat-number"><?= $nb_matieres ?></div>
             </div>
+            <i class="fa-solid fa-book stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-chart-line text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Moyenne générale</div>
-                        <div class="fs-4 fw-bold"><?= number_format((float)$moyenne, 2) ?>/20</div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-green">
+            <div>
+                <div class="stat-label">Moyenne générale</div>
+                <div class="stat-number" style="font-size:22px;"><?= number_format((float)$moyenne, 2) ?><small>/20</small></div>
             </div>
+            <i class="fa-solid fa-chart-line stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-user-xmark text-danger"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Absences / Retards</div>
-                        <div class="fs-4 fw-bold"><?= $nb_absences ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-red">
+            <div>
+                <div class="stat-label">Absences / Retards</div>
+                <div class="stat-number"><?= $nb_absences ?></div>
             </div>
+            <i class="fa-solid fa-user-xmark stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-clock text-info"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Prochain cours</div>
-                        <?php if ($prochain_cours): ?>
-                            <div class="fw-bold fs-6"><?= e($prochain_cours['nom_matiere']) ?></div>
-                            <small class="text-muted"><?= e(substr($prochain_cours['heure_debut'],0,5).' - '.substr($prochain_cours['heure_fin'],0,5)) ?></small>
-                        <?php else: ?>
-                            <div class="text-muted small">-</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-teal">
+            <div>
+                <div class="stat-label">Prochain cours</div>
+                <?php if ($prochain_cours): ?>
+                    <div class="fw-bold"><?= e($prochain_cours['nom_matiere']) ?></div>
+                    <div class="small"><?= e(substr($prochain_cours['heure_debut'],0,5).' - '.substr($prochain_cours['heure_fin'],0,5)) ?></div>
+                <?php else: ?>
+                    <div class="stat-label">-</div>
+                <?php endif; ?>
             </div>
+            <i class="fa-solid fa-clock stat-icon"></i>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-file-pen me-2"></i>Dernières notes</h6>
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-file-pen me-2"></i>Dernières notes</span>
+                <a href="notes.php" class="btn btn-sm btn-outline-primary">Voir tout</a>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($dernieres_notes)): ?>
@@ -193,9 +170,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-bullhorn me-2"></i>Communications</h6>
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-bullhorn me-2"></i>Communications</span>
             </div>
             <div class="list-group list-group-flush">
                 <?php if (empty($dernieres_comms)): ?>
@@ -209,7 +186,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                             <i class="fa-solid <?= $type_icon[$comm['type']] ?? 'fa-info-circle' ?> text-<?= $type_color[$comm['type']] ?? 'info' ?> me-2 mt-1"></i>
                             <div class="flex-grow-1">
                                 <div class="fw-semibold"><?= e($comm['titre']) ?></div>
-                                <small class="text-muted"><?= mb_substr($comm['contenu'],0,80) ?><?= mb_strlen($comm['contenu'])>80?'...':'' ?></small>
+                                <small class="text-muted"><?= e(mb_substr($comm['contenu'],0,80)) ?><?= mb_strlen($comm['contenu'])>80?'...':'' ?></small>
                                 <div><small class="text-muted"><?= date('d/m/Y H:i', strtotime($comm['date_publication'])) ?></small></div>
                             </div>
                         </div>

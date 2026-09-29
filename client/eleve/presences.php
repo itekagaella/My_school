@@ -51,28 +51,23 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <?php display_flash(); ?>
 
 <div class="row g-3 mb-4">
+    <?php $stat_variants = ['present'=>'stat-green','absent'=>'stat-red','retard'=>'stat-orange','excuse'=>'stat-teal']; ?>
     <?php foreach ($cartes as [$cle, $label]): ?>
         <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="flex-shrink-0 rounded-circle bg-<?= $badges[$cle] ?> bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                            <i class="fa-solid <?= $icons[$cle] ?> text-<?= $badges[$cle] ?>"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <div class="text-muted small"><?= $label ?></div>
-                            <div class="fs-4 fw-bold"><?= $compteurs[$cle] ?></div>
-                        </div>
-                    </div>
+            <div class="stat-card <?= $stat_variants[$cle] ?? 'stat-slate' ?>">
+                <div>
+                    <div class="stat-label"><?= $label ?></div>
+                    <div class="stat-number"><?= $compteurs[$cle] ?></div>
                 </div>
+                <i class="fa-solid <?= $icons[$cle] ?> stat-icon"></i>
             </div>
         </div>
     <?php endforeach; ?>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white border-bottom">
-        <h6 class="mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Historique des présences</h6>
+<div class="card">
+    <div class="card-header">
+        <span><i class="fa-solid fa-clipboard-check me-2"></i>Historique des présences</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">

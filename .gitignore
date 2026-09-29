@@ -8,6 +8,9 @@ Thumbs.db
 .env
 *.local
 
+# Marqueur d'installation (généré par install.php)
+config/.installed
+
 # Journal / logs
 *.log
 
@@ -19,6 +22,7 @@ admin/parametres/*.sql
 # Fichiers uploadés (contenu binaire/privé)
 assets/uploads/*
 !assets/uploads/.htaccess
+uploads/
 
 # IDE
 .idea/

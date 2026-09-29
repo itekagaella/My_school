@@ -98,7 +98,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <div class="row g-3">
     <?php if (empty($clubs)): ?>
         <div class="col-12">
-            <div class="card border-0 shadow-sm">
+            <div class="card">
                 <div class="card-body text-center text-muted py-4">Aucun club trouvé.</div>
             </div>
         </div>
@@ -106,7 +106,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         $est_membre = isset($membres_ids[(int)$cl['id']]) ? true : false;
     ?>
         <div class="col-md-6 col-xl-4">
-            <div class="card border-0 shadow-sm h-100 <?= $est_membre ? 'border-success' : '' ?>">
+            <div class="card h-100 <?= $est_membre ? 'border-success' : '' ?>">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-2">
                         <?php if ($cl['logo'] && file_exists(ROOT_PATH . $cl['logo'])): ?>

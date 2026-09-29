@@ -45,11 +45,11 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 </div>
 
 <?php if (empty($communications)): ?>
-    <div class="card border-0 shadow-sm">
+    <div class="card">
         <div class="card-body text-center text-muted py-4">Aucune communication publiée.</div>
     </div>
 <?php else: foreach ($communications as $comm): ?>
-    <div class="card border-0 shadow-sm mb-3">
+    <div class="card mb-3">
         <div class="card-body">
             <div class="d-flex align-items-start">
                 <div class="flex-shrink-0 rounded-circle bg-<?= $type_color[$comm['type']] ?? 'info' ?> bg-opacity-10 d-flex align-items-center justify-content-center me-3" style="width:44px;height:44px;">

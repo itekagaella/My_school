@@ -24,8 +24,13 @@ if (is_logged_in()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - My_School</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts : Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Styles personnalisés (Academix UI) -->
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body class="auth-page">
@@ -52,7 +57,6 @@ if (is_logged_in()) {
                 } else {
                     $result = login($email, $password);
                     if ($result[1] === '2FA_REQUIRED') {
-                        // Rediriger vers la page de vérification 2FA
                         set_flash('info', 'Un code de vérification a été envoyé par email.');
                         header('Location: ' . BASE_URL . 'verify_2fa.php');
                         exit;
@@ -76,12 +80,14 @@ if (is_logged_in()) {
         ?>
 
         <?php if ($error): ?>
-            <div class="alert alert-danger" role="alert"><?= e($error) ?></div>
+            <div class="alert alert-danger" role="alert">
+                <i class="fa-solid fa-circle-exclamation me-2"></i><?= e($error) ?>
+            </div>
         <?php endif; ?>
 
         <?php display_flash(); ?>
 
-        <form method="post" action="">
+        <form method="post" action="" autocomplete="on">
             <?= csrf_field() ?>
             <div class="mb-3">
                 <label class="form-label">Adresse email</label>
@@ -98,14 +104,14 @@ if (is_logged_in()) {
                 </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <a href="forgot_password.php" class="small text-decoration-none">Mot de passe oublié ?</a>
+                <a href="forgot_password.php" class="small text-decoration-none fw-semibold text-muted">Mot de passe oublié ?</a>
             </div>
             <button type="submit" class="btn btn-primary w-100 py-2">
                 <i class="fa-solid fa-right-to-bracket me-2"></i>Se connecter
             </button>
         </form>
 
-        <hr class="my-4">
+        <div class="divider"></div>
         <p class="text-center text-muted small mb-0">
             Besoin d'un compte ? Contactez l'administrateur.
         </p>

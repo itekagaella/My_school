@@ -33,10 +33,18 @@ $classe_ids_r = prepareQuery(
     ['pid'=>$prof_id]
 )->fetchAll();
 $nb_eleves = 0;
-foreach ($classe_ids_r as $row) {
-    $nb_eleves += prepareQuery(
-        'SELECT COUNT(*) AS nb FROM eleves WHERE classe_id=:cid',
-        ['cid'=>$row['classe_id']]
+$ids = array_column($classe_ids_r, 'classe_id');
+if (!empty($ids)) {
+    $params = [];
+    $conds = [];
+    foreach ($ids as $i => $cid) {
+        $k = ':cid_' . $i;
+        $conds[] = $k;
+        $params[$k] = $cid;
+    }
+    $nb_eleves = prepareQuery(
+        'SELECT COUNT(*) AS nb FROM eleves WHERE classe_id IN (' . implode(',', $conds) . ')',
+        $params
     )->fetch()['nb'] ?? 0;
 }
 
@@ -59,12 +67,12 @@ $matieres_enseignees = prepareQuery(
     ['pid'=>$prof_id]
 )->fetchAll();
 
-$jour_actuel = strftime('%A', strtotime('today'));
+$jour_actuel = date('l', strtotime('today'));
 $jour_map = [
     'Monday'=>'Lundi','Tuesday'=>'Mardi','Wednesday'=>'Mercredi',
     'Thursday'=>'Jeudi','Friday'=>'Vendredi','Saturday'=>'Samedi','Sunday'=>'Dimanche'
 ];
-$jour_fr = $jour_map[$jour_actuel] ?? '';
+$jour_fr = $jour_map[$jour_actuel] ?? date('l', strtotime('today'));
 
 $prochain_cours = null;
 if ($jour_fr) {
@@ -85,73 +93,49 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <?php display_flash(); ?>
 
 <div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-book text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Matières enseignées</div>
-                        <div class="fs-4 fw-bold"><?= $nb_matieres ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-blue">
+            <div>
+                <div class="stat-label">Matières enseignées</div>
+                <div class="stat-number"><?= $nb_matieres ?></div>
             </div>
+            <i class="fa-solid fa-book stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-calendar-check text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Cours cette semaine</div>
-                        <div class="fs-4 fw-bold"><?= $nb_cours_semaine ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-green">
+            <div>
+                <div class="stat-label">Cours cette semaine</div>
+                <div class="stat-number"><?= $nb_cours_semaine ?></div>
             </div>
+            <i class="fa-solid fa-calendar-check stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-users text-info"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Élèves total</div>
-                        <div class="fs-4 fw-bold"><?= $nb_eleves ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-teal">
+            <div>
+                <div class="stat-label">Élèves total</div>
+                <div class="stat-number"><?= $nb_eleves ?></div>
             </div>
+            <i class="fa-solid fa-users stat-icon"></i>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 rounded-circle bg-warning bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="fa-solid fa-file-pen text-warning"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <div class="text-muted small">Notes saisies</div>
-                        <div class="fs-4 fw-bold"><?= $nb_notes ?></div>
-                    </div>
-                </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-purple">
+            <div>
+                <div class="stat-label">Notes saisies</div>
+                <div class="stat-number"><?= $nb_notes ?></div>
             </div>
+            <i class="fa-solid fa-file-pen stat-icon"></i>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-book me-2"></i>Matières enseignées</h6>
+        <div class="card mb-3">
+            <div class="card-header">
+                <span><i class="fa-solid fa-book me-2"></i>Matières enseignées</span>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($matieres_enseignees)): ?>
@@ -183,9 +167,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
             </div>
         </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-file-pen me-2"></i>Dernières notes saisies</h6>
+        <div class="card">
+            <div class="card-header">
+                <span><i class="fa-solid fa-file-pen me-2"></i>Dernières notes saisies</span>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($dernieres_notes)): ?>
@@ -228,9 +212,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom">
-                <h6 class="mb-0"><i class="fa-solid fa-clock me-2"></i>Prochain cours</h6>
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-clock me-2"></i>Prochain cours</span>
             </div>
             <div class="card-body">
                 <?php if ($prochain_cours): ?>

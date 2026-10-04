@@ -5,8 +5,8 @@
  * Crée la base PostgreSQL, charge le schéma (config/init.sql) puis les
  * corrections (config/migrations/corrections.sql), et génère le fichier .env.
  *
- * Utile quand on ne veut pas passer par Docker (installation manuelle) ou
- * quand le conteneur PostgreSQL a été recréé vide.
+ * Utile pour une installation manuelle sur Laragon/XAMPP ou sur un poste où
+ * PostgreSQL est déjà installé.
  *
  * Sécurité : l'installeur se verrouille tout seul. Il refuse de s'exécuter
  * si la base est déjà initialisée ou si le fichier config/.installed existe.
@@ -46,6 +46,20 @@ function environment_checks(): array
             'detail' => extension_loaded('pdo_pgsql')
                 ? 'Extension chargée'
                 : 'Activez pdo_pgsql dans votre php.ini puis redémarrez Apache',
+        ],
+        [
+            'label'  => 'Extension pgsql',
+            'ok'     => extension_loaded('pgsql'),
+            'detail' => extension_loaded('pgsql')
+                ? 'Extension chargée'
+                : 'Activez pgsql dans votre php.ini puis redémarrez Apache',
+        ],
+        [
+            'label'  => 'Extension gd',
+            'ok'     => extension_loaded('gd'),
+            'detail' => extension_loaded('gd')
+                ? 'Extension chargée (recommandée)'
+                : 'Extension gd absente. Certaines fonctionnalités graphiques peuvent ne pas fonctionner.',
         ],
         [
             'label'  => 'Fichier config/init.sql',
@@ -451,7 +465,7 @@ foreach ($checks as $c) {
                     <div class="mb-3">
                         <label class="form-label">Hôte PostgreSQL</label>
                         <input type="text" name="db_host" class="form-control" value="<?= e($form['host']) ?>" required>
-                        <span class="form-text">Avec Docker : <code class="k">db</code>. En local : <code class="k">127.0.0.1</code></span>
+                        <span class="form-text">Par défaut : <code class="k">127.0.0.1</code> (PostgreSQL local)</span>
                     </div>
 
                     <div class="mb-3">

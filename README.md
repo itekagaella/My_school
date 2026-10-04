@@ -1,185 +1,89 @@
 # My_School
 
-Système de Gestion Scolaire — PHP 8.5 + PostgreSQL.
+Système de Gestion Scolaire — PHP 8.5 + PostgreSQL
 
-> **Pour démarrer sur Windows :** installe [Docker Desktop](https://www.docker.com/products/docker-desktop/),
-> puis suis [la section Windows](#-windows--docker-desktop). C'est la seule chose à installer.
+## Prérequis
 
-## 🚀 Démarrage rapide avec Docker (recommandé)
+- [PHP 8.5+](https://windows.php.net/download/) avec extensions : `pdo_pgsql`, `pgsql`, `gd`, `mbstring`, `openssl`, `curl`, `zip`
+- [PostgreSQL 14+](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+- Serveur web Apache (recommandé avec Laragon/XAMPP) ou serveur PHP intégré
 
-Le projet est fourni avec un environnement Docker complet (PHP + Apache + PostgreSQL).
+## Installation (Windows)
 
-### Prérequis
+### Option 1 : Laragon (recommandé)
+1. Installer [Laragon](https://laragon.org/download/) (Version Full)
+2. Démarrer Laragon
+3. Placer ce dossier dans `C:\laragon\www\My_School\`
+4. Démarrer Apache et PostgreSQL depuis Laragon
+5. Ouvrir [http://localhost/My_School/install.php](http://localhost/My_School/install.php)
+6. Suivre l'assistant d'installation
+7. **Supprimer `install.php`** après installation réussie
+8. Accéder à [http://localhost/My_School/](http://localhost/My_School/)
 
-- [Docker](https://www.docker.com/products/docker-desktop/) (version 20+)
-- Docker Compose v2 (inclus avec Docker Desktop)
+### Option 2 : XAMPP
+1. Installer [XAMPP](https://www.apachefriends.org/fr/index.html) et [PostgreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
+2. Placer ce dossier dans `C:\xampp\htdocs\My_School\`
+3. Activer les extensions PostgreSQL dans `php.ini` (`pdo_pgsql`, `pgsql`, `gd`)
+4. Démarrer Apache et PostgreSQL
+5. Ouvrir [http://localhost/My_School/install.php](http://localhost/My_School/install.php)
+6. Terminer l'installation puis supprimer `install.php`
 
-### Installation en 3 étapes
+### Option 3 : Serveur PHP intégré
+1. Créer une base `my_school` dans PostgreSQL
+2. Copier `.env.example` vers `.env` et configurer les identifiants PostgreSQL
+3. Ouvrir un terminal dans le dossier du projet
+4. Lancer : `php -S localhost:8080`
+5. Ouvrir [http://localhost:8080/install.php](http://localhost:8080/install.php)
+6. Terminer l'installation puis supprimer `install.php`
 
-```bash
-# 1. Cloner le projet
-git clone https://github.com/itekagaella/My_school.git
-cd My_school
+## Configuration manuelle (.env)
 
-# 2. Démarrer les conteneurs (premier lancement : construit l'image et initialise la BDD)
-docker compose up -d
+Copier `.env.example` vers `.env` :
 
-# 3. Ouvrir l'application
-#    → http://localhost:8081
+```env
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=my_school
+DB_USER=postgres
+DB_PASSWORD=VOTRE_MOT_DE_PASSE
+ENCRYPTION_KEY=GENEREZ_UNE_CLE_UNIQUE
 ```
 
-Le premier lancement crée automatiquement la base de données et charge le
-schéma (tables + procédures stockées). Les démarrages suivants sont instantanés
-et conservent vos données (volume PostgreSQL).
-
-### 🪟 Windows — Docker Desktop
-
-Docker Desktop embarque tout ce qu'il faut (PostgreSQL compris), donc **rien
-d'autre à installer** : ni WAMP, ni XAMPP, ni PostgreSQL, ni PHP.
-
-1. Télécharge et installe [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-   (l'icône baleine doit apparaître en bas à droite : le moteur Docker tourne).
-2. Installe [Git for Windows](https://git-scm.com/download/win) — ou récupère
-   l'archive ZIP du dépôt depuis le bouton vert **Code** sur GitHub et
-   décompresse-la où tu veux.
-3. Ouvre **PowerShell** dans le dossier du projet, puis :
-
-```powershell
-# Si tu as cloné avec Git :
-git clone https://github.com/itekagaella/My_school.git
-cd My_school
-
-# Si tu as décompressé le ZIP, saute simplement les deux lignes ci-dessus
-
-# Démarrer (le premier lancement construit l'image : compte 5 à 10 minutes)
-docker compose up -d
-
-# Ouvrir l'application
-start http://localhost:8081
+Générer une clé unique :
+```cmd
+php -r "echo bin2hex(random_bytes(32));"
 ```
 
-Une seule dépendance est donc requise : **Docker Desktop**.
-
-<details>
-<summary>Si <code>docker</code> n'est pas reconnu dans PowerShell</summary>
-
-Docker Desktop n'est pas démarré ou n'est pas dans le PATH. Ferme puis
-rouvre PowerShell après l'installation ; si ça ne suffit pas, ajoute
-`C:\Program Files\Docker\Docker\resources\bin` aux variables d'environnement
-PATH, ou clique sur l'icône Docker Desktop dans la barre des tâches.
-</details>
-
-### Identifiants par défaut
+## Identifiants par défaut
 
 | Rôle | Email | Mot de passe |
-|------|-------|--------------|
-| **Administrateur** | `admin@myschool.edu` | `admin123` |
+|---|---|---|
+| Administrateur | `admin@myschool.edu` | `admin123` |
 
-Les comptes élèves / professeurs / personnel sont créés depuis l'interface
-administrateur (menu **Utilisateurs** et **Élèves / Professeurs / Personnel**).
+**Important :** Changez ce mot de passe dès la première connexion.
 
-> Changez ce mot de passe dès la première connexion (menu *Paramètres*).
-
-### Commandes utiles
-
-```bash
-docker compose up -d            # Lancer en arrière-plan
-docker compose logs -f web      # Voir les logs de l'application
-docker compose logs -f db       # Voir les logs PostgreSQL
-docker compose down             # Arrêter les conteneurs (données conservées)
-docker compose down -v          # Arrêter ET supprimer les données (reset complet)
-docker compose ps               # État des conteneurs
-```
-
-> **Ports :** web → `8081`, PostgreSQL → `5433` (host) / `5432` (conteneur).
-> Le port 5433 côté hôte évite tout conflit avec un PostgreSQL local.
-
-
-## 🔧 Installation manuelle (sans Docker)
-
-> Si tu as Docker, saute cette section : [plus haut](#-démarrage-rapide-avec-docker-recommandé)
-> c'est plus simple. Ce mode est prévu pour un poste où PostgreSQL est déjà
-> installé (typiquement un serveur Linux).
-
-### Prérequis
-
-- PHP 8.0+ avec extensions `pdo_pgsql`, `pgsql`, `gd`
-- PostgreSQL 12+
-- Apache (avec `mod_rewrite`) ou serveur PHP intégré
-
-### Étapes
-
-1. **Base de données :** créer une base nommée `my_school` puis lancer
-   `psql -U postgres -d my_school -f config/init.sql`.
-2. **Configuration :** copier `.env.example` en `.env` et renseigner les
-   identifiants PostgreSQL.
-
-   ```bash
-   cp .env.example .env
-   # Windows : copy .env.example .env
-   ```
-
-   ```
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_NAME=my_school
-   DB_USER=postgres
-   DB_PASSWORD=votre_mot_de_passe
-   ```
-
-3. **Serveur :**
-   ```bash
-   php -S localhost:8080
-   # puis ouvrir http://localhost:8080
-   ```
-
-4. Se connecter avec `admin@myschool.edu` / `admin123`.
-
-### Ou alors : laisser l'application s'auto-installer
-
-Si tu ne veux pas toucher à la ligne de commande, sers les fichiers et ouvre
-`http://localhost:8080/install.php`. L'assistant vérifie l'environnement, crée
-la base, charge le schéma, génère le `.env` et définit ton mot de passe
-administrateur. Il se verrouille tout seul une fois l'installation terminée —
-tu peux alors supprimer `install.php` du serveur.
-
-> ⚠️ `install.php` ne s'exécute que si la base est vide. Pour réinstaller :
-> supprime la base, puis le fichier `config/.installed`.
-
-## 🗂️ Structure du projet
+## Structure du projet
 
 ```
-admin/        Interface d'administration (gestion complète)
-client/       Espace élève / professeur / personnel
-api/          Endpoints (chat, notifications, recherche, données)
-config/       Configuration + schéma de base de données (init.sql)
-includes/     Fonctions, sécurité, layouts
-assets/       CSS / JS / uploads
-install.php   Installeur web (création de la base, à supprimer après usage)
-Dockerfile  docker-compose.yml  .env.example   # Environnement Docker
+admin/        Interface d'administration
+client/       Espace élèves/profs/personnel
+api/          API REST
+config/       Configuration, schéma SQL (init.sql), migrations
+includes/     Fonctions, authentification, layouts
+assets/       CSS, JS, uploads
+install.php   Assistant d'installation (à supprimer après usage)
 ```
 
-## ✨ Fonctionnalités
+## Fonctionnalités principales
 
-- **Authentification sécurisée** : sessions, 2FA par email, hash bcrypt, tokens
-  CSRF, verrouillage du compte après échecs répétés, réinitialisation de mot de
-  passe.
-- **Rôles & permissions** : admin, élève, professeur, personnel, avec contrôle
-  d'accès granulaire et journal des activités.
-- **Gestion des données** : utilisateurs, élèves, professeurs, personnel,
-  classes, matières, horaires (avec détection de conflits), notes, présences.
-- **Vie scolaire** : clubs et adhésions, communications/annonces, documents
-  (upload, versions, partage), commentaires.
-- **Rapports & statistiques** : exports PDF et Excel, graphiques Chart.js.
-- **Communication en temps réel** : chat interne et notifications.
-- **Administration** : paramètres système, thèmes, sauvegarde de la base.
+- Authentification sécurisée (sessions, 2FA, CSRF, verrouillage comptes)
+- Gestion utilisateurs, élèves, professeurs, personnel, classes, matières
+- Horaires, notes, présences, absences
+- Clubs, communications, documents (avec versions/partage)
+- Rapports PDF/Excel, statistiques
+- Chat interne, notifications
+- Journal d'activités, sauvegardes
 
-## ⚠️ Note de sécurité
+## Sécurité
 
-En production, changez obligatoirement :
-- le mot de passe administrateur par défaut,
-- supprimez `install.php` du serveur (ou laissez-le se verrouiller tout seul),
-- la clé `ENCRYPTION_KEY` dans le fichier `.env`,
-- les identifiants PostgreSQL,
-- les valeurs de `MAIL_*` dans `config/config.php`.
-
+En production : changez l'administrateur par défaut, supprimez `install.php`, modifiez `ENCRYPTION_KEY` et les identifiants PostgreSQL.

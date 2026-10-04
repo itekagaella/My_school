@@ -1,8 +1,0 @@
-.git
-.gitignore
-.env
-*.log
-admin/parametres/*.sql
-assets/uploads/*
-uploads/
-config/.installed

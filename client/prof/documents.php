@@ -42,9 +42,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h5 class="mb-0"><i class="fa-solid fa-folder-open me-2 text-primary"></i>Documents</h5>
-    <form method="get" action="" class="d-flex gap-2">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fa-solid fa-folder-open me-2 text-primary"></i>Documents</h4>
+    <form method="get" action="" class="filter-form">
         <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher un document...">
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
     </form>
@@ -74,7 +74,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                                 <?php if (!empty($doc['description'])): ?>
                                     <p class="text-muted small mb-2"><?= e(mb_substr($doc['description'], 0, 100)) ?><?= mb_strlen($doc['description'] ?? '') > 100 ? '...' : '' ?></p>
                                 <?php endif; ?>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
                                     <small class="text-muted"><i class="fa-solid fa-calendar me-1"></i><?= date('d/m/Y', strtotime($doc['created_at'])) ?></small>
                                     <a href="<?= BASE_URL ?>client/documents/download.php?id=<?= $doc['id'] ?>" class="btn btn-sm btn-outline-primary">
                                         <i class="fa-solid fa-download me-1"></i>Télécharger

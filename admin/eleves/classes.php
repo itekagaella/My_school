@@ -8,17 +8,24 @@ require_role(['admin']);
 $page_title = 'Gestion des classes';
 $active_menu = 'eleves';
 
+$SECTION_AUTRE = '__autre__';
+$niveaux_burundi = classes_burundi_list();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) set_flash('error', 'Session expirée.');
     else {
         $action = $_POST['action'] ?? '';
         if ($action === 'create') {
             $nom = clean_input($_POST['nom_classe'] ?? '');
-            $niveau = clean_input($_POST['niveau'] ?? '');
-            $section = clean_input($_POST['section'] ?? '');
-            $annee = clean_input($_POST['annee_scolaire'] ?? date('Y') . '-' . (date('Y')+1));
+            $niveau = niveau_pour_classe($nom);
+            $sectionChoisie = clean_input($_POST['section'] ?? '');
+            $section = ($sectionChoisie === $SECTION_AUTRE) ? clean_input($_POST['section_autre'] ?? '') : $sectionChoisie;
+            $annee = clean_input($_POST['annee_scolaire'] ?? date('Y') . '-' . (date('Y') + 1));
             $capacite = (int)($_POST['capacite'] ?? 50);
-            if (empty($nom) || empty($niveau)) set_flash('error', 'Nom et niveau requis.');
+
+            if ($nom === '') set_flash('error', 'Sélectionnez une classe.');
+            elseif ($niveau === '') set_flash('error', 'Cette classe n\'existe pas dans le système scolaire burundais.');
+            elseif ($sectionChoisie === $SECTION_AUTRE && $section === '') set_flash('error', 'Précisez la section ou choisissez-en une dans la liste.');
             else {
                 prepareQuery(
                     'INSERT INTO classes (nom_classe, niveau, section, annee_scolaire, capacite)
@@ -30,16 +37,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'edit') {
             $id = (int)($_POST['id'] ?? 0);
+            $existant = prepareQuery('SELECT * FROM classes WHERE id = :id', ['id' => $id])->fetch();
             $nom = clean_input($_POST['nom_classe'] ?? '');
-            $niveau = clean_input($_POST['niveau'] ?? '');
-            $section = clean_input($_POST['section'] ?? '');
+            $niveau = niveau_pour_classe($nom);
+            $sectionChoisie = clean_input($_POST['section'] ?? '');
+            $section = ($sectionChoisie === $SECTION_AUTRE) ? clean_input($_POST['section_autre'] ?? '') : $sectionChoisie;
             $capacite = (int)($_POST['capacite'] ?? 50);
-            prepareQuery(
-                'UPDATE classes SET nom_classe=:n, niveau=:l, section=:s, capacite=:c WHERE id=:id',
-                ['n'=>$nom,'l'=>$niveau,'s'=>$section,'c'=>$capacite,'id'=>$id]
-            );
-            log_activity('classes.edit', 'Modification de la classe #' . $id);
-            set_flash('success', 'Classe mise à jour.');
+
+            if (!$existant) set_flash('error', 'Classe introuvable.');
+            elseif ($nom === '') set_flash('error', 'Sélectionnez une classe.');
+            elseif ($niveau === '' && $nom !== $existant['nom_classe']) set_flash('error', 'Cette classe n\'existe pas dans le système scolaire burundais.');
+            elseif ($sectionChoisie === $SECTION_AUTRE && $section === '') set_flash('error', 'Précisez la section ou choisissez-en une dans la liste.');
+            else {
+                $niveau = ($niveau !== '') ? $niveau : $existant['niveau'];
+                prepareQuery(
+                    'UPDATE classes SET nom_classe=:n, niveau=:l, section=:s, capacite=:c WHERE id=:id',
+                    ['n'=>$nom,'l'=>$niveau,'s'=>$section,'c'=>$capacite,'id'=>$id]
+                );
+                log_activity('classes.edit', 'Modification de la classe #' . $id);
+                set_flash('success', 'Classe mise à jour.');
+            }
         } elseif ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
             prepareQuery('DELETE FROM classes WHERE id = :id', ['id'=>$id]);
@@ -52,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $annees = [date('Y').'-'.(date('Y')+1), (date('Y')-1).'-'.date('Y')];
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql())->fetchAll();
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar_admin.php';
@@ -67,12 +84,28 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <form method="post" action="">
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="create">
-                    <div class="mb-2"><label class="form-label required">Nom de la classe</label>
-                        <input type="text" name="nom_classe" class="form-control" placeholder="Ex: 6ème A" required></div>
-                    <div class="mb-2"><label class="form-label required">Niveau</label>
-                        <input type="text" name="niveau" class="form-control" placeholder="Ex: 6ème" required></div>
-                    <div class="mb-2"><label class="form-label">Section</label>
-                        <input type="text" name="section" class="form-control" placeholder="Ex: A"></div>
+                    <div class="mb-2"><label class="form-label required">Classe</label>
+                        <select name="nom_classe" id="c_nom" class="form-select" required onchange="majNiveau(this, 'c_niveau')">
+                            <option value="">— Choisir une classe —</option>
+                            <?php foreach (classes_burundi() as $cycle => $noms): ?>
+                                <optgroup label="<?= e($cycle) ?>">
+                                    <?php foreach ($noms as $n): ?>
+                                        <option value="<?= e($n) ?>"><?= e($n) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endforeach; ?>
+                        </select></div>
+                    <div class="mb-2"><label class="form-label">Niveau <span class="text-muted">(automatique)</span></label>
+                        <input type="text" id="c_niveau" class="form-control" readonly placeholder="Choisissez une classe"></div>
+                    <div class="mb-2"><label class="form-label">Section / Série</label>
+                        <select name="section" id="c_section" class="form-select" onchange="majSection(this, 'c_section_autre')">
+                            <option value="">— Aucune —</option>
+                            <?php foreach (sections_burundi() as $s): ?>
+                                <option value="<?= e($s) ?>"><?= e($s) ?></option>
+                            <?php endforeach; ?>
+                            <option value="<?= e($SECTION_AUTRE) ?>">Autre (à préciser)</option>
+                        </select>
+                        <input type="text" name="section_autre" id="c_section_autre" class="form-control mt-2" placeholder="Préciser la section" style="display:none"></div>
                     <div class="row g-2">
                         <div class="col-md-6">
                             <label class="form-label">Année scolaire</label>
@@ -96,7 +129,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-header"><i class="fa-solid fa-school me-2"></i><?= count($classes) ?> classes</div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>Classe</th><th>Niveau</th><th>Section</th><th>Année</th><th>Capacité</th><th class="text-end">Actions</th></tr></thead>
+                    <thead class="table-light"><tr><th>Classe</th><th>Niveau</th><th>Section</th><th>Année</th><th>Capacité</th><th class="text-end">Actions</th></tr></thead>
                     <tbody>
                         <?php if (empty($classes)): ?>
                             <tr><td colspan="6" class="text-center text-muted py-4">Aucune classe.</td></tr>
@@ -137,9 +170,28 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <input type="hidden" name="id" id="e_id">
                 <div class="modal-header"><h5 class="modal-title">Modifier la classe</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-2"><label class="form-label">Nom</label><input type="text" name="nom_classe" id="e_nom" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label">Niveau</label><input type="text" name="niveau" id="e_niveau" class="form-control" required></div>
-                    <div class="mb-2"><label class="form-label">Section</label><input type="text" name="section" id="e_section" class="form-control"></div>
+                    <div class="mb-2"><label class="form-label">Classe</label>
+                        <select name="nom_classe" id="e_nom" class="form-select" required onchange="majNiveau(this, 'e_niveau')">
+                            <option value="">— Choisir une classe —</option>
+                            <?php foreach (classes_burundi() as $cycle => $noms): ?>
+                                <optgroup label="<?= e($cycle) ?>">
+                                    <?php foreach ($noms as $n): ?>
+                                        <option value="<?= e($n) ?>"><?= e($n) ?></option>
+                                    <?php endforeach; ?>
+                                </optgroup>
+                            <?php endforeach; ?>
+                        </select></div>
+                    <div class="mb-2"><label class="form-label">Niveau <span class="text-muted">(automatique)</span></label>
+                        <input type="text" id="e_niveau" class="form-control" readonly></div>
+                    <div class="mb-2"><label class="form-label">Section / Série</label>
+                        <select name="section" id="e_section" class="form-select" onchange="majSection(this, 'e_section_autre')">
+                            <option value="">— Aucune —</option>
+                            <?php foreach (sections_burundi() as $s): ?>
+                                <option value="<?= e($s) ?>"><?= e($s) ?></option>
+                            <?php endforeach; ?>
+                            <option value="<?= e($SECTION_AUTRE) ?>">Autre (à préciser)</option>
+                        </select>
+                        <input type="text" name="section_autre" id="e_section_autre" class="form-control mt-2" placeholder="Préciser la section" style="display:none"></div>
                     <div><label class="form-label">Capacité</label><input type="number" name="capacite" id="e_cap" class="form-control" min="1"></div>
                 </div>
                 <div class="modal-footer">
@@ -152,14 +204,60 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 </div>
 
 <script>
+var CLASSES_NIVEAUX = <?= json_encode($niveaux_burundi, JSON_UNESCAPED_UNICODE) ?>;
+var SECTION_AUTRE = <?= json_encode($SECTION_AUTRE) ?>;
+
+function majNiveau(select, cible) {
+    var el = document.getElementById(cible);
+    if (el) el.value = CLASSES_NIVEAUX[select.value] || '';
+}
+
+function majSection(select, cible) {
+    var el = document.getElementById(cible);
+    if (!el) return;
+    var autre = select.value === SECTION_AUTRE;
+    el.style.display = autre ? 'block' : 'none';
+    if (autre) el.focus(); else el.value = '';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var modal = document.getElementById('editModal');
     modal.addEventListener('show.bs.modal', function(event) {
         var btn = event.relatedTarget;
         document.getElementById('e_id').value = btn.getAttribute('data-id');
-        document.getElementById('e_nom').value = btn.getAttribute('data-nom');
-        document.getElementById('e_niveau').value = btn.getAttribute('data-niveau');
-        document.getElementById('e_section').value = btn.getAttribute('data-section') || '';
+
+        var nom = btn.getAttribute('data-nom') || '';
+        var selNom = document.getElementById('e_nom');
+        var legacy = selNom.querySelector('option[data-legacy]');
+        if (legacy) legacy.parentNode.removeChild(legacy);
+        if (nom && !Object.prototype.hasOwnProperty.call(CLASSES_NIVEAUX, nom)) {
+            var opt = document.createElement('option');
+            opt.value = nom;
+            opt.textContent = nom + ' (classe actuelle)';
+            opt.setAttribute('data-legacy', '1');
+            selNom.appendChild(opt);
+        }
+        selNom.value = nom;
+        majNiveau(selNom, 'e_niveau');
+        if (!selNom.value) document.getElementById('e_niveau').value = btn.getAttribute('data-niveau') || '';
+
+        var sec = btn.getAttribute('data-section') || '';
+        var selSec = document.getElementById('e_section');
+        var inpSec = document.getElementById('e_section_autre');
+        var trouve = false;
+        for (var i = 0; i < selSec.options.length; i++) {
+            if (selSec.options[i].value === sec) { trouve = true; break; }
+        }
+        if (trouve) {
+            selSec.value = sec;
+            inpSec.style.display = 'none';
+            inpSec.value = '';
+        } else {
+            selSec.value = SECTION_AUTRE;
+            inpSec.style.display = 'block';
+            inpSec.value = sec;
+        }
+
         document.getElementById('e_cap').value = btn.getAttribute('data-cap');
     });
 });

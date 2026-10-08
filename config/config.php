@@ -59,8 +59,35 @@ define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10 Mo
 define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'txt']);
 define('UPLOAD_DIR', ROOT_PATH . 'assets/uploads/');
 
-// Configuration email (utiliser PHPMailer en production)
-define('MAIL_ENABLED', false);
+// Lit une variable d'environnement : getenv() → $_ENV → fichier .env
+if (!function_exists('config_env')) {
+    function config_env(string $key, string $default = ''): string
+    {
+        $v = getenv($key);
+        if ($v !== false && $v !== '') return $v;
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
+        $envFile = __DIR__ . '/../.env';
+        if (is_file($envFile)) {
+            foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $envLine) {
+                $envLine = trim($envLine);
+                if ($envLine === '' || $envLine[0] === '#' || strpos($envLine, '=') === false) continue;
+                [$envKey, $envVal] = explode('=', $envLine, 2);
+                if (trim($envKey) !== $key) continue;
+                $envVal = trim($envVal);
+                if (strlen($envVal) >= 2 && (($envVal[0] === '"' && substr($envVal, -1) === '"') || ($envVal[0] === "'" && substr($envVal, -1) === "'"))) {
+                    $envVal = substr($envVal, 1, -1);
+                }
+                return $envVal;
+            }
+        }
+        return $default;
+    }
+}
+
+// Configuration email
+// MAIL_ENABLED=true → envoi réel via mail() (PHPMailer/SMTP recommandé en production).
+// Sinon les emails sont journalisés dans storage/mail/ (boîte de démo).
+define('MAIL_ENABLED', filter_var(config_env('MAIL_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN));
 define('MAIL_HOST', 'smtp.example.com');
 define('MAIL_PORT', 587);
 define('MAIL_USERNAME', '');

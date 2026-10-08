@@ -14,7 +14,7 @@ if (!$comm) {
 $page_title = 'Modifier une communication';
 $active_menu = 'communications';
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $selectedDest = array_map('trim', explode(',', $comm['destinataires']));
 
 $error = '';
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function send_notifications(int $commId, array $destinataires, string $titre, string $contenu, string $type): void
 {
-    $lien = 'client/eleve/communication.php?id=' . $commId;
+    $lien = 'client/communication.php?id=' . $commId;
     $message = mb_substr($contenu, 0, 200);
     $userIds = [];
 

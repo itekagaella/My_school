@@ -12,7 +12,7 @@ $active_menu = 'presences';
 $date = get('date', date('Y-m-d'));
 $classe_id = (int)get('classe_id', 0);
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 $where = [];
 $params = ['date' => $date];
@@ -47,7 +47,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 ?>
 <?php display_flash(); ?>
 
-<form method="get" action="" class="row g-2 mb-3 align-items-end">
+<form method="get" action="" class="row g-2 align-items-end mb-3">
     <div class="col-md-3">
         <label class="form-label">Date</label>
         <input type="date" name="date" class="form-control" value="<?= e($date) ?>">
@@ -88,7 +88,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     <div class="card-header"><i class="fa-solid fa-clipboard-check me-2"></i>Détail des présences</div>
     <div class="card-body p-0 table-responsive">
         <table class="table table-hover mb-0">
-            <thead><tr><th>Élève</th><th>Classe</th><th>Statut</th><th>Heure</th><th>Motif</th><th>Marqué par</th></tr></thead>
+            <thead class="table-light"><tr><th>Élève</th><th>Classe</th><th>Statut</th><th>Heure</th><th>Motif</th><th>Marqué par</th></tr></thead>
             <tbody>
                 <?php if (empty($presences)): ?>
                     <tr><td colspan="6" class="text-center text-muted py-4">Aucune présence enregistrée pour cette date.</td></tr>

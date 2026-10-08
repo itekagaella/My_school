@@ -47,12 +47,25 @@ DB_NAME=my_school
 DB_USER=postgres
 DB_PASSWORD=VOTRE_MOT_DE_PASSE
 ENCRYPTION_KEY=GENEREZ_UNE_CLE_UNIQUE
+MAIL_ENABLED=false
+DEMO_LINKS=false
 ```
 
 Générer une clé unique :
 ```cmd
 php -r "echo bin2hex(random_bytes(32));"
 ```
+
+### Emails (2FA et mot de passe oublié)
+
+- `MAIL_ENABLED=true` : envoi réel des emails via `mail()` du serveur.
+  Indispensable pour que la 2FA et la réinitialisation de mot de passe
+  fonctionnent en production (un serveur SMTP doit être configuré sur la machine).
+- `MAIL_ENABLED=false` : les emails sont écrits dans `storage/mail/` et
+  consultables dans **Admin > Journal > Boîte email** (mode démo).
+- `DEMO_LINKS=true` : affiche les codes OTP / liens directement à l'écran
+  lorsqu'aucun SMTP n'est configuré — à activer uniquement pour une démo locale,
+  jamais sur un déploiement accessible en réseau.
 
 ## Identifiants par défaut
 

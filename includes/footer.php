@@ -5,7 +5,7 @@
 ?>
     </main>
     <!-- Bootstrap JS Bundle (nécessaire aux modals) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?= BASE_URL ?>assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="<?= BASE_URL ?>assets/js/app.js"></script>
     <footer class="app-footer">
         <div class="container text-center py-3">

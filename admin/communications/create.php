@@ -9,7 +9,7 @@ $active_menu = 'communications';
 $error = '';
 $d = ['titre'=>'', 'contenu'=>'', 'type'=>'annonce', 'statut'=>'brouillon', 'destinataires'=>[]];
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function send_notifications(int $commId, array $destinataires, string $titre, string $contenu, string $type): void
 {
-    $lien = 'client/eleve/communication.php?id=' . $commId;
+    $lien = 'client/communication.php?id=' . $commId;
     $message = mb_substr($contenu, 0, 200);
     $userIds = [];
 

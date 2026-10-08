@@ -6,6 +6,8 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_role(['admin']);
 require_permission('horaires.publish');
 
+$classe_id = (int)($_GET['classe_id'] ?? $_POST['classe_id'] ?? 0);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
         set_flash('error', 'Session expirée.');

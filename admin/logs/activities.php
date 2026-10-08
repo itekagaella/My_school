@@ -87,7 +87,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Date</th>
                         <th>Utilisateur</th>
@@ -120,7 +120,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Date</th>
                         <th>Utilisateur</th>

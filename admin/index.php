@@ -8,6 +8,12 @@ require_role(['admin']);
 $page_title = 'Tableau de bord';
 $active_menu = 'dashboard';
 
+// Sauvegarde automatique quotidienne (paramètre "sauvegarde_auto")
+// Silencieuse : un échec ne doit jamais bloquer le tableau de bord.
+if (function_exists('backup_auto')) {
+    backup_auto();
+}
+
 // Statistiques via procédure stockée
 $stats = prepareQuery('SELECT * FROM sp_dashboard_stats()')->fetchAll()[0] ?? [];
 if (!$stats) $stats = ['total_eleves'=>0,'total_profs'=>0,'total_classes'=>0,'total_communications'=>0,'total_documents'=>0,'total_clubs'=>0,'absences_mois'=>0,'retards_mois'=>0];
@@ -30,7 +36,7 @@ $eleves_recents = prepareQuery(
 $eleves_par_classe = prepareQuery(
     'SELECT c.nom_classe, COUNT(e.id) AS total
      FROM classes c LEFT JOIN eleves e ON e.classe_id = c.id
-     GROUP BY c.nom_classe ORDER BY c.nom_classe'
+     GROUP BY c.nom_classe ORDER BY ' . classes_order_sql('c.nom_classe')
 )->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
@@ -126,7 +132,7 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Utilisateur</th>
                                 <th>Action</th>
@@ -163,7 +169,7 @@ require_once __DIR__ . '/../includes/sidebar_admin.php';
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr><th>Matricule</th><th>Nom</th><th>Classe</th></tr>
                         </thead>
                         <tbody>

@@ -53,7 +53,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 <div class="row g-3 mb-4">
     <?php $stat_variants = ['present'=>'stat-green','absent'=>'stat-red','retard'=>'stat-orange','excuse'=>'stat-teal']; ?>
     <?php foreach ($cartes as [$cle, $label]): ?>
-        <div class="col-sm-6 col-xl-3">
+        <div class="col-6 col-sm-6 col-xl-3">
             <div class="stat-card <?= $stat_variants[$cle] ?? 'stat-slate' ?>">
                 <div>
                     <div class="stat-label"><?= $label ?></div>

@@ -48,8 +48,8 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="mb-0"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>Emploi du temps</h4>
-    <form method="get" action="" class="d-flex gap-2 align-items-center">
-        <select name="jour" class="form-select" onchange="this.form.submit()" style="width:180px;">
+    <form method="get" action="" class="filter-form">
+        <select name="jour" class="form-select flex-grow-1" onchange="this.form.submit()">
             <option value="">Tous les jours</option>
             <?php foreach ($jours as $j): ?>
                 <option value="<?= $j ?>" <?= $jour_filter===$j?'selected':'' ?>><?= $j ?></option>

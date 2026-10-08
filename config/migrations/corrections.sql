@@ -31,7 +31,8 @@ BEGIN
 
     -- Générer matricule: ANNEE + séquence (corrigé: position correcte après 'ELV-YYYY-')
     SELECT EXTRACT(YEAR FROM CURRENT_DATE)::INT INTO v_annee;
-    SELECT COALESCE(MAX(CAST(SUBSTRING(matricule FROM 10) AS INT)), 0) + 1
+    SELECT COALESCE(MAX(CASE WHEN matricule ~ '^ELV-[0-9]{4}-[0-9]+$'
+                             THEN CAST(SUBSTRING(matricule FROM 10) AS INT) END), 0) + 1
     INTO v_seq FROM eleves;
     v_matricule := 'ELV-' || v_annee::TEXT || '-' || LPAD(v_seq::TEXT, 4, '0');
 
@@ -99,3 +100,8 @@ BEGIN
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ---------- Fix: 2FA - hash bcrypt trop long pour la colonne OTP ----------
+-- dernier_code_otp stocke password_hash($otp, PASSWORD_BCRYPT) = 60 caractères,
+-- la colonne VARCHAR(10) faisait échouer la connexion 2FA avec une PDOException.
+ALTER TABLE utilisateurs ALTER COLUMN dernier_code_otp TYPE VARCHAR(255);

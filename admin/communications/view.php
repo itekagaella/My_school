@@ -33,7 +33,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= e($comm['titre']) ?></h4>
+    <h4 class="mb-0"><i class="fa-solid fa-newspaper me-2 text-primary"></i><?= e($comm['titre']) ?></h4>
     <div class="d-flex gap-2">
         <?php if ($canEdit): ?>
             <a href="edit.php?id=<?= $comm['id'] ?>" class="btn btn-outline-primary"><i class="fa-solid fa-pen me-1"></i>Modifier</a>

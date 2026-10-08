@@ -56,6 +56,7 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
             <?= admin_menu_item('users_users', 'Utilisateurs', 'fa-users', 'admin/users/index.php', $active_menu) ?>
             <?= admin_menu_item('users_roles', 'Rôles & Permissions', 'fa-user-shield', 'admin/users/roles.php', $active_menu) ?>
             <?= admin_menu_item('logs', 'Journal & Connexions', 'fa-clock-rotate-left', 'admin/logs/activities.php', $active_menu) ?>
+            <?= admin_menu_item('logs_emails', 'Boîte email', 'fa-envelope-open-text', 'admin/logs/emails.php', $active_menu) ?>
             <?= admin_menu_item('logs_cleanup', 'Nettoyage', 'fa-broom', 'admin/logs/cleanup.php', $active_menu) ?>
 
             <li class="nav-section">Gestion des données</li>

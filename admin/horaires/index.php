@@ -11,7 +11,7 @@ $active_menu = 'horaires';
 
 $classe_id = (int)get('classe_id', 0);
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 if ($classe_id === 0 && !empty($classes)) $classe_id = $classes[0]['id'];
 
 // Créneaux de la classe sélectionnée
@@ -60,8 +60,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <div class="card mb-3">
     <div class="card-header"><i class="fa-solid fa-calendar-days me-2"></i>Emploi du temps</div>
     <div class="card-body p-0 table-responsive">
-        <table class="table table-bordered horaure-table m-0">
-            <thead>
+        <table class="table table-bordered horaire-table m-0">
+            <thead class="table-light">
                 <tr>
                     <th style="width:80px;text-align:center;">Heure</th>
                     <?php foreach ($jours as $j): ?><th style="text-align:center;"><?= $j ?></th><?php endforeach; ?>
@@ -99,7 +99,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead><tr><th>Jour</th><th>Heures</th><th>Matière</th><th>Prof</th><th>Salle</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+                <thead class="table-light"><tr><th>Jour</th><th>Heures</th><th>Matière</th><th>Prof</th><th>Salle</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
                     <?php if (empty($horaires)): ?>
                         <tr><td colspan="7" class="text-center text-muted py-4">Aucun créneau pour cette classe.</td></tr>

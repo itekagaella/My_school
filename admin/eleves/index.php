@@ -40,7 +40,7 @@ $eleves = prepareQuery(
 // Vérifier si l'utilisateur courant a le droit de gérer
 $canEdit = has_permission('eleves.edit');
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar_admin.php';
@@ -49,7 +49,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= count($eleves) ?> élève(s)</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-user-graduate me-2 text-primary"></i>Élèves <span class="text-muted fs-6">(<?= count($eleves) ?>)</span></h4>
     <div class="d-flex gap-2">
         <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Inscrire un élève</a>
         <a href="import.php" class="btn btn-outline-secondary"><i class="fa-solid fa-file-import me-1"></i>Importer</a>
@@ -85,7 +85,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Matricule</th>
                         <th>Élève</th>

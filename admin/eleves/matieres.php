@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
 $matieres = prepareQuery(
     "SELECT m.*, c.nom_classe, p.nom AS prof_nom, p.prenom AS prof_prenom
@@ -97,7 +97,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead><tr><th>Code</th><th>Matière</th><th>Coeff.</th><th>Classe</th><th>Professeur</th><th class="text-end">Actions</th></tr></thead>
+                        <thead class="table-light"><tr><th>Code</th><th>Matière</th><th>Coeff.</th><th>Classe</th><th>Professeur</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
                             <?php if (empty($matieres)): ?>
                                 <tr><td colspan="6" class="text-center text-muted py-4">Aucune matière.</td></tr>

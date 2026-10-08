@@ -48,7 +48,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-        <h4 class="mb-0"><?= $total ?> utilisateur(s)</h4>
+        <h4 class="mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>Utilisateurs <span class="text-muted fs-6">(<?= $total ?>)</span></h4>
     </div>
     <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouvel utilisateur</a>
 </div>
@@ -83,7 +83,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th><a href="?order=id&dir=<?= $orderDir==='ASC'?'DESC':'ASC' ?>&search=<?= e($search) ?>&role=<?= e($role) ?>&etat=<?= e($etat) ?>">ID</a></th>
                         <th>Utilisateur</th>

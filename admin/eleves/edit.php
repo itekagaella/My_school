@@ -16,7 +16,7 @@ if (!$el) {
 
 $page_title = 'Modifier un élève';
 $active_menu = 'eleves';
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -24,7 +24,15 @@ assets/uploads/*
 !assets/uploads/.htaccess
 uploads/
 
+# Emails de démo (boîte locale, contenus privés)
+storage/mail/*
+!storage/mail/.gitkeep
+
 # IDE
 .idea/
 .vscode/
 *.swp
+
+# Sauvegardes SQL locales (contenus privés)
+storage/backups/*
+!storage/backups/.gitkeep

@@ -24,12 +24,10 @@ if (is_logged_in()) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion - My_School</title>
-    <!-- Google Fonts : Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts : Plus Jakarta Sans (local) -->
+    <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
+    <!-- Font Awesome (local) -->
+    <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <!-- Styles personnalisés (Academix UI) -->
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
@@ -44,18 +42,28 @@ if (is_logged_in()) {
         <?php
         $error = '';
         $email = '';
+        $profils_valides = ['eleve', 'prof', 'personnel', 'admin'];
+        $profil = clean_input($_POST['profil'] ?? $_GET['profil'] ?? '');
+        if (!in_array($profil, $profils_valides, true)) $profil = '';
+        $mode_admin = ($profil === 'admin');
+
+        $profil_label = ['eleve' => 'Élève', 'prof' => 'Professeur', 'personnel' => 'Personnel', 'admin' => 'Administrateur'];
+        $profil_icone = ['eleve' => 'fa-user-graduate', 'prof' => 'fa-chalkboard-user', 'personnel' => 'fa-briefcase'];
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!csrf_verify($_POST['csrf_token'] ?? null)) {
                 $error = 'Session expirée, veuillez réessayer.';
             } else {
+                $profil = clean_input($_POST['profil'] ?? '');
                 $email = clean_input($_POST['email'] ?? '');
                 $password = $_POST['password'] ?? '';
 
-                if (empty($email) || empty($password)) {
+                if (!in_array($profil, $profils_valides, true)) {
+                    $error = 'Sélectionnez votre profil de connexion.';
+                } elseif (empty($email) || empty($password)) {
                     $error = 'Veuillez remplir tous les champs.';
                 } else {
-                    $result = login($email, $password);
+                    $result = login($email, $password, $profil);
                     if ($result[1] === '2FA_REQUIRED') {
                         set_flash('info', 'Un code de vérification a été envoyé par email.');
                         header('Location: ' . BASE_URL . 'verify_2fa.php');
@@ -73,6 +81,8 @@ if (is_logged_in()) {
                         exit;
                     } else {
                         $error = $result[1];
+                        // Conserver l'email saisi, pas le profil si le rendu doit rester cohérent
+                        $mode_admin = ($profil === 'admin');
                     }
                 }
             }
@@ -89,6 +99,25 @@ if (is_logged_in()) {
 
         <form method="post" action="" autocomplete="on">
             <?= csrf_field() ?>
+            <?php if ($mode_admin): ?>
+                <input type="hidden" name="profil" value="admin">
+                <div class="auth-role-admin">
+                    <i class="fa-solid fa-shield-halved me-2"></i>Connexion à l'espace administration
+                </div>
+            <?php else: ?>
+                <fieldset class="auth-role-picker">
+                    <legend>Je me connecte en tant que</legend>
+                    <div class="auth-role-grid">
+                        <?php foreach (['eleve', 'prof', 'personnel'] as $p): ?>
+                            <label class="auth-role-tile" for="profil-<?= $p ?>">
+                                <input type="radio" name="profil" id="profil-<?= $p ?>" value="<?= $p ?>" <?= $profil === $p ? 'checked' : '' ?> required>
+                                <i class="fa-solid <?= $profil_icone[$p] ?>"></i>
+                                <span><?= $profil_label[$p] ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </fieldset>
+            <?php endif; ?>
             <div class="mb-3">
                 <label class="form-label">Adresse email</label>
                 <div class="input-group">
@@ -113,7 +142,12 @@ if (is_logged_in()) {
 
         <div class="divider"></div>
         <p class="text-center text-muted small mb-0">
-            Besoin d'un compte ? Contactez l'administrateur.
+            <?php if ($mode_admin): ?>
+                <a href="index.php" class="fw-semibold text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>Connexion à l'espace client</a>
+            <?php else: ?>
+                Besoin d'un compte ? Contactez l'administrateur.
+                <br><a href="index.php?profil=admin" class="fw-semibold text-decoration-none">Espace administration</a>
+            <?php endif; ?>
         </p>
     </div>
 </body>

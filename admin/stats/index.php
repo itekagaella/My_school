@@ -13,7 +13,7 @@ $active_menu = 'rapports';
 $effectifs_classes = prepareQuery(
     "SELECT c.nom_classe, COUNT(e.id) AS nb
      FROM classes c LEFT JOIN eleves e ON e.classe_id=c.id
-     GROUP BY c.id, c.nom_classe ORDER BY c.nom_classe")->fetchAll();
+     GROUP BY c.id, c.nom_classe ORDER BY " . classes_order_sql('c.nom_classe'))->fetchAll();
 
 // Répartition par sexe
 $repartition_sexe = prepareQuery(
@@ -25,7 +25,7 @@ $repartition_profs = prepareQuery(
 
 // Moyenne générale par classe
 $moyennes_classes = [];
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 foreach ($classes as $cl) {
     $moy = prepareQuery(
         "SELECT COALESCE(AVG(n.note),0) AS moy
@@ -85,7 +85,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <div class="card-body"><canvas id="chartPresences" height="130"></canvas></div></div></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= BASE_URL ?>assets/vendor/chartjs/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const clsLabels = <?= json_encode(array_column($effectifs_classes,'nom_classe')) ?>;

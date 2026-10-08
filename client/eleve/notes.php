@@ -98,7 +98,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="fa-solid fa-file-pen me-2"></i>Toutes mes notes</span>
             <?php if (!empty($matieres_eleve)): ?>
-                <form method="get" action="" class="d-flex gap-2">
+                <form method="get" action="" class="filter-form">
                     <select name="matiere" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">Toutes les matières</option>
                         <?php foreach ($matieres_eleve as $m): ?>

@@ -37,9 +37,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h5 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h5>
-    <form method="get" action="" class="d-flex gap-2">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h4>
+    <form method="get" action="" class="filter-form">
         <select name="type" class="form-select" onchange="this.form.submit()">
             <option value="">Tous les types</option>
             <option value="annonce" <?= $type_filter==='annonce'?'selected':'' ?>>Annonce</option>
@@ -71,7 +71,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                                 <i class="fa-solid <?= $icon ?> me-1"></i><?= $label ?>
                             </span>
                         </div>
-                        <h6 class="card-title fw-bold"><?= e($comm['titre']) ?></h6>
+                        <h6 class="card-title fw-bold"><a href="<?= BASE_URL ?>client/communication.php?id=<?= $comm['id'] ?>" class="text-dark text-decoration-none"><?= e($comm['titre']) ?></a></h6>
                         <p class="card-text text-muted small mb-3"><?= e(mb_substr($comm['contenu'], 0, 200)) ?><?= mb_strlen($comm['contenu']) > 200 ? '...' : '' ?></p>
                         <div class="d-flex align-items-center justify-content-between">
                             <small class="text-muted"><i class="fa-regular fa-clock me-1"></i><?= date('d/m/Y H:i', strtotime($comm['date_publication'])) ?></small>

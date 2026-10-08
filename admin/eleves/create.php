@@ -12,7 +12,7 @@ $active_menu = 'eleves';
 $error = '';
 $d = ['nom'=>'','prenom'=>'','date_naissance'=>'','sexe'=>'M','classe_id'=>'', 'parent_nom'=>'','parent_tel'=>'','parent_email'=>'','adresse'=>'','email_compte'=>''];
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {

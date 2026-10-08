@@ -30,7 +30,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="mb-0"><i class="fa-solid fa-folder-open me-2 text-primary"></i>Documents</h4>
-    <form method="get" action="" class="d-flex gap-2">
+    <form method="get" action="" class="filter-form">
         <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher un document...">
         <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
     </form>

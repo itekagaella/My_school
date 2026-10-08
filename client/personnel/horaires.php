@@ -16,7 +16,7 @@ if (!$pers) {
     exit;
 }
 
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $filtre_classe = isset($_GET['classe_id']) ? (int)$_GET['classe_id'] : 0;
 
 $params = [];
@@ -44,25 +44,22 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-auto">
-                <label class="form-label small text-muted">Filtrer par classe</label>
-                <select name="classe_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="0">Toutes les classes</option>
-                    <?php foreach ($classes as $cl): ?>
-                        <option value="<?= $cl['id'] ?>" <?= $filtre_classe == $cl['id'] ? 'selected' : '' ?>><?= e($cl['nom_classe']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-        </form>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>Emploi du temps</h4>
+    <form method="get" action="" class="filter-form">
+        <label class="text-muted small mb-0 d-none d-sm-inline">Classe</label>
+        <select name="classe_id" class="form-select flex-grow-1" onchange="this.form.submit()">
+            <option value="0">Toutes les classes</option>
+            <?php foreach ($classes as $cl): ?>
+                <option value="<?= $cl['id'] ?>" <?= $filtre_classe == $cl['id'] ? 'selected' : '' ?>><?= e($cl['nom_classe']) ?></option>
+            <?php endforeach; ?>
+        </select>
+    </form>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <span><i class="fa-solid fa-calendar-days me-2"></i>Emploi du temps</span>
+        <span><i class="fa-solid fa-table-list me-2"></i>Cours de la semaine</span>
     </div>
     <div class="card-body p-0">
         <?php if (empty($horaires)): ?>

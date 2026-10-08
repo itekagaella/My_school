@@ -53,9 +53,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-        <h5 class="mb-0">Emploi du temps</h5>
+        <h4 class="mb-0"><i class="fa-solid fa-calendar-days me-2 text-primary"></i>Emploi du temps</h4>
         <small class="text-muted"><?= e($prof['nom'] . ' ' . $prof['prenom']) ?></small>
     </div>
     <div>
@@ -92,7 +92,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                     <div class="list-group list-group-flush">
                         <?php foreach ($cours_jour as $c): ?>
                             <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                                     <div class="flex-grow-1">
                                         <div class="fw-semibold">
                                             <span class="badge bg-secondary me-1"><?= e($c['matiere_code']) ?></span>

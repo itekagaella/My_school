@@ -79,7 +79,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="fa-solid fa-share-nodes me-2"></i>Partage de « <?= e($doc['nom_fichier']) ?> »</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-share-nodes me-2 text-primary"></i>Partage de « <?= e($doc['nom_fichier']) ?> »</h4>
     <a href="index.php" class="btn btn-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Retour</a>
 </div>
 
@@ -93,7 +93,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead>
+                            <thead class="table-light">
                                 <tr>
                                     <th>Utilisateur</th>
                                     <th>Email</th>

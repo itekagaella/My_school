@@ -114,8 +114,8 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h5 class="mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Gestion des présences</h5>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fa-solid fa-clipboard-check me-2 text-primary"></i>Gestion des présences</h4>
 </div>
 
 <div class="card mb-4">

@@ -13,7 +13,7 @@ $classe_id = (int)get('classe_id', 0);
 $matiere_id = (int)get('matiere_id', 0);
 $classe_id_filter = $classe_id;
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 
 $where = [];
@@ -68,7 +68,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead><tr><th>Élève</th><th>Classe</th><th>Matière</th><th>Note</th><th>Type</th><th>Date</th><th>Prof</th></tr></thead>
+                <thead class="table-light"><tr><th>Élève</th><th>Classe</th><th>Matière</th><th>Note</th><th>Type</th><th>Date</th><th>Prof</th></tr></thead>
                 <tbody>
                     <?php if (empty($notes)): ?>
                         <tr><td colspan="7" class="text-center text-muted py-4">Aucune note trouvée.</td></tr>

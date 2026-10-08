@@ -38,7 +38,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= count($clubs) ?> club(s)</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-people-group me-2 text-primary"></i>Clubs <span class="text-muted fs-6">(<?= count($clubs) ?>)</span></h4>
     <?php if (has_permission('clubs.create')): ?>
         <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouveau club</a>
     <?php endif; ?>
@@ -64,7 +64,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Club</th>
                         <th>Description</th>

@@ -38,7 +38,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= count($documents) ?> document(s)</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-folder-open me-2 text-primary"></i>Documents <span class="text-muted fs-6">(<?= count($documents) ?>)</span></h4>
     <?php if (has_permission('documents.upload')): ?>
         <a href="upload.php" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up me-2"></i>Téléverser un document</a>
     <?php endif; ?>
@@ -69,7 +69,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Nom du fichier</th>
                         <th>Type</th>

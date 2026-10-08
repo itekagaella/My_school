@@ -91,7 +91,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-header"><i class="fa-solid fa-book me-2"></i>Matières enseignées</div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>Code</th><th>Matière</th><th>Classe</th><th>Coefficient</th></tr></thead>
+                    <thead class="table-light"><tr><th>Code</th><th>Matière</th><th>Classe</th><th>Coefficient</th></tr></thead>
                     <tbody>
                         <?php if (empty($matieres)): ?>
                             <tr><td colspan="4" class="text-center text-muted py-3">Aucune matière assignée.</td></tr>
@@ -112,7 +112,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-header"><i class="fa-solid fa-calendar-days me-2"></i>Emploi du temps</div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>Jour</th><th>Matière</th><th>Classe</th><th>Horaire</th><th>Salle</th></tr></thead>
+                    <thead class="table-light"><tr><th>Jour</th><th>Matière</th><th>Classe</th><th>Horaire</th><th>Salle</th></tr></thead>
                     <tbody>
                         <?php if (empty($horaires)): ?>
                             <tr><td colspan="5" class="text-center text-muted py-3">Aucun horaire enregistré.</td></tr>

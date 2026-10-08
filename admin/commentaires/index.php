@@ -42,7 +42,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= count($commentaires) ?> commentaire(s)</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-comment-dots me-2 text-primary"></i>Commentaires <span class="text-muted fs-6">(<?= count($commentaires) ?>)</span></h4>
     <div class="d-flex gap-2">
         <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Ajouter</a>
         <a href="../documents/index.php" class="btn btn-outline-secondary"><i class="fa-solid fa-folder-open me-1"></i>Documents</a>
@@ -72,7 +72,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Document</th>
                         <th>Utilisateur</th>

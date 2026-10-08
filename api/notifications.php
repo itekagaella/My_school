@@ -56,7 +56,7 @@ if ($role === 'admin') {
                             </div>
                             <?php if ($n['message']): ?><div class="text-muted small mt-1"><?= nl2br(e($n['message'])) ?></div><?php endif; ?>
                             <small class="text-muted d-block mt-1"><?= date('d/m/Y H:i', strtotime($n['created_at'])) ?></small>
-                            <?php if ($n['lien']): ?><a href="<?= e($n['lien']) ?>" class="small">Voir</a><?php endif; ?>
+                            <?php if ($n['lien'] && !preg_match('#^https?://#', $n['lien'])): ?><a href="<?= BASE_URL . e($n['lien']) ?>" class="small">Voir</a><?php endif; ?>
                         </div>
                         <?php if (!$n['lu']): ?>
                             <form method="post" action="">

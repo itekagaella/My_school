@@ -1,64 +1,49 @@
 <?php
 /**
  * Rapport personnalisé (sélection de colonnes et filtres avancés)
+ * La génération et les exports partagent rapport_custom_dataset() (data.php).
  */
 require_once __DIR__ . '/../../includes/auth.php';
 require_role(['admin']);
 require_permission('reports.view');
 
+require_once __DIR__ . '/data.php';
+
 $page_title = 'Rapport personnalisé';
 $active_menu = 'rapports';
 
 $type = get('type', 'eleves');
-$colonnes = get('colonnes', []);
+if (!rapport_custom_colonnes($type)) $type = 'eleves';
 $classe_id = (int)get('classe_id', 0);
+$colonnes_dispo = rapport_custom_colonnes($type);
 
-$colonnes_dispo = [
-    'eleves' => ['matricule'=>'Matricule','nom'=>'Nom','prenom'=>'Prénom','sexe'=>'Sexe','date_naissance'=>'Date naissance','adresse'=>'Adresse','tel'=>'Tél','email'=>'Email','classe'=>'Classe'],
-    'profs' => ['matricule'=>'Matricule','nom'=>'Nom','prenom'=>'Prénom','specialite'=>'Spécialité','tel'=>'Tél','email'=>'Email','statut'=>'Statut'],
-    'notes' => ['matricule'=>'Matricule','eleve'=>'Élève','matiere'=>'Matière','note'=>'Note','type'=>'Type','date'=>'Date','classe'=>'Classe'],
-];
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$ds = null;
+$selColonnes = [];
 
-$result = null;
-$resultHeaders = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ?? null)) {
     $type = clean_input($_POST['type'] ?? 'eleves');
+    if (!rapport_custom_colonnes($type)) $type = 'eleves';
+    $colonnes_dispo = rapport_custom_colonnes($type);
     $classe_id = (int)($_POST['classe_id'] ?? 0);
-    $selColonnes = $_POST['colonnes'] ?? [];
+    $postColonnes = $_POST['colonnes'] ?? [];
+    if (!is_array($postColonnes)) $postColonnes = [$postColonnes];
 
-    if (!empty($selColonnes)) {
-        $colMap = $colonnes_dispo[$type] ?? [];
-        $resultHeaders = [];
-        $selects = [];
-        foreach ($selColonnes as $col) {
-            if (!isset($colMap[$col])) continue;
-            $resultHeaders[] = $colMap[$col];
-            if ($type === 'eleves') {
-                $selects[] = $col === 'classe' ? 'c.nom_classe' : 'e.' . $col;
-            } elseif ($type === 'profs') {
-                $selects[] = 'p.' . $col;
-            } elseif ($type === 'notes') {
-                $mapN = ['matricule'=>'e.matricule','eleve'=>"(e.prenom||' '||e.nom)",'matiere'=>'m.nom_matiere','note'=>'n.note','type'=>'n.type_evaluation','date'=>'n.date_evaluation','classe'=>'c.nom_classe'];
-                if (isset($mapN[$col])) $selects[] = $mapN[$col];
-            }
-        }
-        if ($selects) {
-            if ($type === 'eleves') {
-                $w = $classe_id>0 ? 'WHERE e.classe_id=:cl' : '';
-                $p = $classe_id>0 ? ['cl'=>$classe_id] : [];
-                $result = prepareQuery('SELECT '.implode(',',$selects).' FROM eleves e LEFT JOIN classes c ON c.id=e.classe_id '.$w.' ORDER BY e.nom', $p)->fetchAll();
-            } elseif ($type === 'profs') {
-                $result = prepareQuery('SELECT '.implode(',',$selects).' FROM profs p WHERE p.statut=\'actif\' ORDER BY p.nom')->fetchAll();
-            } elseif ($type === 'notes') {
-                $w = $classe_id>0 ? 'WHERE c.id=:cl' : '';
-                $p = $classe_id>0 ? ['cl'=>$classe_id] : [];
-                $result = prepareQuery('SELECT '.implode(',',$selects).' FROM notes n JOIN eleves e ON e.id=n.eleve_id JOIN matieres m ON m.id=n.matiere_id JOIN classes c ON c.id=e.classe_id '.$w.' ORDER BY e.nom', $p)->fetchAll();
-            }
-            log_activity('reports.custom', 'Rapport personnalisé ' . $type);
+    // Ne garder que les colonnes valides pour la source choisie
+    foreach ($postColonnes as $c) {
+        if (is_string($c) && isset($colonnes_dispo[$c]) && !in_array($c, $selColonnes, true)) {
+            $selColonnes[] = $c;
         }
     }
+
+    $ds = rapport_custom_dataset($type, $selColonnes, $classe_id);
+    log_activity('reports.custom', 'Rapport personnalisé ' . $type . ' (' . count($ds['rows']) . ' lignes)');
+}
+
+$classe_nom = 'Toutes';
+foreach ($classes as $c) {
+    if ((int)$c['id'] === $classe_id) { $classe_nom = $c['nom_classe']; break; }
 }
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -90,10 +75,10 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Colonnes à inclure</label>
-                        <?php foreach (($colonnes_dispo[$type] ?? []) as $key=>$label): ?>
+                        <?php foreach ($colonnes_dispo as $key=>$def): ?>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="colonnes[]" value="<?= $key ?>" id="col_<?= $key ?>" <?= in_array($key, (array)($_POST['colonnes'] ?? [])) ? 'checked':'' ?>>
-                                <label class="form-check-label" for="col_<?= $key ?>"><?= $label ?></label>
+                                <input class="form-check-input" type="checkbox" name="colonnes[]" value="<?= e($key) ?>" id="col_<?= e($key) ?>" <?= in_array($key, $selColonnes, true) ? 'checked':'' ?>>
+                                <label class="form-check-label" for="col_<?= e($key) ?>"><?= e($def[0]) ?></label>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -106,20 +91,41 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <div class="card">
             <div class="card-header"><i class="fa-solid fa-table me-2"></i>Aperçu du rapport</div>
             <div class="card-body">
-                <?php if ($result !== null && !empty($resultHeaders)): ?>
+                <?php if ($ds !== null && !empty($ds['headers'])): ?>
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
-                            <thead><tr><?php foreach ($resultHeaders as $h): ?><th><?= e($h) ?></th><?php endforeach; ?></tr></thead>
+                            <thead class="table-light"><tr><?php foreach ($ds['headers'] as $h): ?><th><?= e($h) ?></th><?php endforeach; ?></tr></thead>
                             <tbody>
-                                <?php if (empty($result)): ?>
-                                    <tr><td colspan="<?= count($resultHeaders) ?>" class="text-center text-muted">Aucun résultat.</td></tr>
-                                <?php else: foreach ($result as $row): ?>
-                                    <tr><?php foreach (array_values($row) as $v): ?><td><?= e(is_null($v)?'':$v) ?></td><?php endforeach; ?></tr>
+                                <?php if (empty($ds['rows'])): ?>
+                                    <tr><td colspan="<?= count($ds['headers']) ?>" class="text-center text-muted">Aucun résultat.</td></tr>
+                                <?php else: foreach ($ds['rows'] as $row): ?>
+                                    <tr>
+                                        <?php foreach ($row as $i => $v): ?>
+                                            <td><?= e(rapport_format_value($ds['types'][$i] ?? 'text', $v)) ?></td>
+                                        <?php endforeach; ?>
+                                    </tr>
                                 <?php endforeach; endif; ?>
                             </tbody>
                         </table>
-                        <a href="excel.php?type=custom" class="btn btn-success btn-sm"><i class="fa-solid fa-file-excel me-1"></i>Exporter</a>
                     </div>
+
+                    <div class="d-flex gap-2 mt-2">
+                        <?php if (has_permission('reports.pdf')): ?>
+                        <a class="btn btn-danger btn-sm"
+                           href="custom_export.php?format=pdf&type=<?= e($type) ?>&classe_id=<?= (int)$classe_id ?><?= $selColonnes ? '&amp;' . http_build_query(['colonnes' => $selColonnes], '', '&amp;') : '' ?>">
+                            <i class="fa-solid fa-file-pdf me-1"></i>Exporter en PDF
+                        </a>
+                        <?php endif; ?>
+                        <?php if (has_permission('reports.excel')): ?>
+                        <a class="btn btn-success btn-sm"
+                           href="custom_export.php?format=xlsx&amp;type=<?= e($type) ?>&amp;classe_id=<?= (int)$classe_id ?><?= $selColonnes ? '&amp;' . http_build_query(['colonnes' => $selColonnes], '', '&amp;') : '' ?>">
+                            <i class="fa-solid fa-file-excel me-1"></i>Exporter en Excel
+                        </a>
+                        <?php endif; ?>
+                        <span class="text-muted small align-self-center"><?= count($ds['rows']) ?> ligne(s) — classe : <?= e($classe_nom) ?></span>
+                    </div>
+                <?php elseif ($ds !== null): ?>
+                    <p class="text-muted text-center py-5">Cochez au moins une colonne puis cliquez sur « Générer ».</p>
                 <?php else: ?>
                     <p class="text-muted text-center py-5">Sélectionnez les colonnes puis cliquez sur « Générer ».</p>
                 <?php endif; ?>

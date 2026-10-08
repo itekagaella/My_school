@@ -70,7 +70,7 @@ $dernieres_notes = prepareQuery(
 
 $dernieres_comms = prepareQuery(
     "SELECT * FROM communications
-    WHERE statut='publie' AND (destinataires='tous' OR destinataires LIKE '%role:eleve%')
+    WHERE " . communications_where_eleve($classe_id) . "
     ORDER BY date_publication DESC LIMIT 5"
 )->fetchAll();
 
@@ -171,8 +171,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     </div>
     <div class="col-lg-4">
         <div class="card h-100">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <span><i class="fa-solid fa-bullhorn me-2"></i>Communications</span>
+                <a href="communications.php" class="btn btn-sm btn-outline-primary">Voir tout</a>
             </div>
             <div class="list-group list-group-flush">
                 <?php if (empty($dernieres_comms)): ?>
@@ -185,7 +186,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                         <div class="d-flex align-items-start">
                             <i class="fa-solid <?= $type_icon[$comm['type']] ?? 'fa-info-circle' ?> text-<?= $type_color[$comm['type']] ?? 'info' ?> me-2 mt-1"></i>
                             <div class="flex-grow-1">
-                                <div class="fw-semibold"><?= e($comm['titre']) ?></div>
+                                <div class="fw-semibold"><a href="<?= BASE_URL ?>client/communication.php?id=<?= $comm['id'] ?>" class="text-dark text-decoration-none"><?= e($comm['titre']) ?></a></div>
                                 <small class="text-muted"><?= e(mb_substr($comm['contenu'],0,80)) ?><?= mb_strlen($comm['contenu'])>80?'...':'' ?></small>
                                 <div><small class="text-muted"><?= date('d/m/Y H:i', strtotime($comm['date_publication'])) ?></small></div>
                             </div>

@@ -36,7 +36,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><i class="fa-solid fa-people-group me-2"></i><?= e($club['nom_club']) ?></h4>
+    <h4 class="mb-0"><i class="fa-solid fa-people-group me-2 text-primary"></i><?= e($club['nom_club']) ?></h4>
     <div class="d-flex gap-2">
         <?php if ($canEdit): ?>
             <a href="edit.php?id=<?= $club['id'] ?>" class="btn btn-outline-primary"><i class="fa-solid fa-pen me-1"></i>Modifier</a>
@@ -88,7 +88,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Matricule</th>
                                 <th>Élève</th>

@@ -97,8 +97,8 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="row" style="height: calc(100vh - 160px);">
-    <div class="col-md-4 col-lg-3 border-end d-flex flex-column" style="overflow-y:auto;">
+<div class="row chat-layout<?= $interlocuteur ? ' has-thread' : '' ?>">
+    <div class="col-md-4 col-lg-3 chat-list-pane border-end d-flex flex-column" style="overflow-y:auto;">
         <div class="p-3 border-bottom">
             <h6 class="mb-2"><i class="fa-solid fa-comments me-2"></i>Conversations</h6>
             <input type="text" class="form-control form-control-sm" id="searchConversations" placeholder="Rechercher...">
@@ -139,9 +139,12 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
         </div>
     </div>
 
-    <div class="col-md-8 col-lg-9 d-flex flex-column">
+    <div class="col-md-8 col-lg-9 chat-main-pane d-flex flex-column">
         <?php if ($interlocuteur): ?>
             <div class="p-3 border-bottom bg-white d-flex align-items-center">
+                <a href="chat.php" class="btn btn-light btn-sm me-2 d-md-none" title="Retour aux conversations">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
                 <?php if (!empty($interlocuteur['avatar']) && file_exists(ROOT_PATH.$interlocuteur['avatar'])): ?>
                     <img src="<?= BASE_URL.e($interlocuteur['avatar']) ?>" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
                 <?php else: ?>
@@ -207,7 +210,7 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
             </div>
             <div class="modal-body">
                 <input type="text" class="form-control mb-3" id="searchUsers" placeholder="Rechercher un utilisateur...">
-                <div class="list-group" id="listUsers" style="max-height:300px;overflow-y:auto;">
+                <div class="list-group" id="listUsers" style="max-height:min(300px,50vh);overflow-y:auto;">
                     <?php foreach ($autres_users as $au): ?>
                         <a href="chat.php?avec=<?= $au['id'] ?>" class="list-group-item list-group-item-action d-flex align-items-center">
                             <?php if (!empty($au['avatar']) && file_exists(ROOT_PATH.$au['avatar'])): ?>

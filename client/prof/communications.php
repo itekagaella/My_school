@@ -27,9 +27,9 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
 <?php display_flash(); ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h5 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h5>
-    <form method="get" action="" class="d-flex gap-2">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h4>
+    <form method="get" action="" class="filter-form">
         <select name="type" class="form-select" onchange="this.form.submit()">
             <option value="">Tous les types</option>
             <option value="annonce" <?= $type_filter==='annonce'?'selected':'' ?>>Annonce</option>
@@ -57,8 +57,8 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                                 <i class="fa-solid <?= $type_icon[$comm['type']] ?? 'fa-info-circle' ?> text-<?= $type_color[$comm['type']] ?? 'info' ?>"></i>
                             </div>
                             <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="mb-1 fw-semibold"><?= e($comm['titre']) ?></h6>
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <h6 class="mb-1 fw-semibold"><a href="<?= BASE_URL ?>client/communication.php?id=<?= $comm['id'] ?>" class="text-dark text-decoration-none"><?= e($comm['titre']) ?></a></h6>
                                     <span class="badge bg-<?= $type_color[$comm['type']] ?? 'info' ?>"><?= e(ucfirst($comm['type'])) ?></span>
                                 </div>
                                 <p class="text-muted small mb-2"><?= nl2br(e(mb_substr($comm['contenu'], 0, 200))) ?><?= mb_strlen($comm['contenu']) > 200 ? '...' : '' ?></p>

@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/backup.php';
 
 // ============================================================
 // FONCTIONS DE NETTOYAGE ET VALIDATION
@@ -71,10 +72,14 @@ function csrf_token(): string
 
 /**
  * CSRF - vérifie le token
+ * Un jeton vide ou absent est toujours refusé : sans cette règle, une session
+ * qui n'a jamais affiché de formulaire (donc sans jeton) accepterait un POST
+ * avec un champ csrf_token vide.
  */
 function csrf_verify(?string $token): bool
 {
-    return isset($token) && hash_equals($_SESSION['csrf_token'] ?? '', $token);
+    $attendu = $_SESSION['csrf_token'] ?? '';
+    return $attendu !== '' && $token !== null && hash_equals($attendu, $token);
 }
 
 /**
@@ -369,4 +374,97 @@ function paginate(int $total, int $perPage = 10, int $currentPage = 1): array
     $currentPage = min($currentPage, $totalPages);
     $offset = ($currentPage - 1) * $perPage;
     return [$offset, $perPage, $totalPages, $currentPage];
+}
+
+// ============================================================
+// SYSTÈME SCOLAIRE BURUNDAIS
+// ============================================================
+
+/**
+ * Classes comprises entre le primaire et l'université (réforme « École fondamentale »).
+ * Retourne [cycle => [nom_classe, ...]] dans l'ordre pédagogique.
+ */
+function classes_burundi(): array
+{
+    return [
+        'Enseignement fondamental (cycle 4)' => [
+            '7ème année (fondamental)',
+            '8ème année (fondamental)',
+            '9ème année (fondamental)',
+        ],
+        'Enseignement post-fondamental' => [
+            '1ère année (post-fondamental)',
+            '2ème année (post-fondamental)',
+            '3ème année (post-fondamental)',
+        ],
+    ];
+}
+
+/**
+ * Liste plate ordonnée : [nom_classe => cycle]
+ */
+function classes_burundi_list(): array
+{
+    $liste = [];
+    foreach (classes_burundi() as $cycle => $noms) {
+        foreach ($noms as $nom) {
+            $liste[$nom] = $cycle;
+        }
+    }
+    return $liste;
+}
+
+/**
+ * Niveau (cycle) d'un nom de classe, '' si la classe n'existe pas dans le système
+ */
+function niveau_pour_classe(string $nomClasse): string
+{
+    $liste = classes_burundi_list();
+    return $liste[$nomClasse] ?? '';
+}
+
+/**
+ * Séries de l'enseignement secondaire (le libellé « Autre » est géré par l'interface)
+ */
+function sections_burundi(): array
+{
+    return ['Sciences', 'Lettres', 'Pédagogie', 'Commerciale', 'Économie', 'Techniques'];
+}
+
+/**
+ * Tri SQL des classes dans l'ordre pédagogique (classes hors liste en dernier)
+ *
+ * @param string $col colonne ou alias contenant le nom de classe (littéral du code uniquement)
+ */
+function classes_order_sql(string $col = 'nom_classe'): string
+{
+    $sql = 'CASE ' . $col;
+    $rang = 1;
+    foreach (array_keys(classes_burundi_list()) as $nom) {
+        $sql .= " WHEN '" . str_replace("'", "''", $nom) . "' THEN " . $rang++;
+    }
+    return $sql . ' ELSE 99 END';
+}
+
+/**
+ * Filtre SQL des communications visibles par un élève
+ *
+ * Reprend la règle appliquée à l'ouverture d'une communication
+ * (client/communication.php) : statut publié et destinataires « tous »,
+ * « role:eleve » ou « classe:{sa classe} ». Utilisé par la liste des
+ * communications et le tableau de bord pour rester cohérent.
+ *
+ * @param ?int $classeId classe de l'élève (null si le profil n'en a pas)
+ * @param string $alias alias éventuel de la table communications
+ */
+function communications_where_eleve(?int $classeId, string $alias = ''): string
+{
+    $p = $alias !== '' ? $alias . '.' : '';
+    $sql = $p . "statut = 'publie' AND ("
+        . $p . "destinataires = 'tous'"
+        . " OR ',' || " . $p . "destinataires || ',' LIKE '%,role:eleve,%'";
+    if ($classeId !== null && $classeId > 0) {
+        $sql .= " OR ',' || " . $p . "destinataires || ',' LIKE '%,classe:" . $classeId . ",%'";
+    }
+    return $sql . ')';
 }

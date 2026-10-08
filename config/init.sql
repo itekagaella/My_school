@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     avatar              VARCHAR(255),
     actif               BOOLEAN DEFAULT TRUE,
     deux_facteurs       BOOLEAN DEFAULT FALSE,
-    dernier_code_otp    VARCHAR(10),
+    dernier_code_otp    VARCHAR(255),
     dernier_code_exp    TIMESTAMP,
     derniere_connexion TIMESTAMP,
     tentatives_connexion INT DEFAULT 0,
@@ -436,7 +436,8 @@ BEGIN
 
     -- Générer matricule: ANNEE + séquence (corrigé: position correcte après 'ELV-YYYY-')
     SELECT EXTRACT(YEAR FROM CURRENT_DATE)::INT INTO v_annee;
-    SELECT COALESCE(MAX(CAST(SUBSTRING(matricule FROM 10) AS INT)), 0) + 1
+    SELECT COALESCE(MAX(CASE WHEN matricule ~ '^ELV-[0-9]{4}-[0-9]+$'
+                             THEN CAST(SUBSTRING(matricule FROM 10) AS INT) END), 0) + 1
     INTO v_seq FROM eleves;
     v_matricule := 'ELV-' || v_annee::TEXT || '-' || LPAD(v_seq::TEXT, 4, '0');
 

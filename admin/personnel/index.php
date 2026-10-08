@@ -41,7 +41,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0"><?= count($personnel) ?> membre(s)</h4>
+    <h4 class="mb-0"><i class="fa-solid fa-briefcase me-2 text-primary"></i>Personnel <span class="text-muted fs-6">(<?= count($personnel) ?>)</span></h4>
     <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouveau membre</a>
 </div>
 
@@ -74,7 +74,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
         <div class="table-responsive">
             <table class="table table-hover">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Matricule</th>
                         <th>Nom & Prénom</th>

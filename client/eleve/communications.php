@@ -8,7 +8,13 @@ $active_menu = 'communications';
 $type_filter = clean_input(get('type', ''));
 $types = ['annonce','alerte','info'];
 
-$where = "c.statut = 'publie' AND (c.destinataires = 'tous' OR c.destinataires LIKE '%role:eleve%' OR c.destinataires LIKE '%classe%')";
+$profil = prepareQuery(
+    'SELECT classe_id FROM eleves WHERE user_id = :uid',
+    ['uid' => $user['id']]
+)->fetch();
+$classe_id = (int)($profil['classe_id'] ?? 0);
+
+$where = communications_where_eleve($classe_id ?: null, 'c');
 $params = [];
 if ($type_filter !== '' && in_array($type_filter, $types)) {
     $where .= ' AND c.type = :type';
@@ -34,8 +40,8 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Communications</h4>
-    <form method="get" action="" class="d-flex gap-2 align-items-center">
-        <select name="type" class="form-select" onchange="this.form.submit()" style="width:180px;">
+    <form method="get" action="" class="filter-form">
+        <select name="type" class="form-select flex-grow-1" onchange="this.form.submit()">
             <option value="">Tous les types</option>
             <option value="annonce" <?= $type_filter==='annonce'?'selected':'' ?>>Annonce</option>
             <option value="alerte" <?= $type_filter==='alerte'?'selected':'' ?>>Alerte</option>
@@ -56,10 +62,10 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                     <i class="fa-solid <?= $type_icon[$comm['type']] ?? 'fa-circle-info' ?> text-<?= $type_color[$comm['type']] ?? 'info' ?>"></i>
                 </div>
                 <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between align-items-start">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <h6 class="mb-1">
                             <span class="badge bg-<?= $type_color[$comm['type']] ?? 'info' ?> me-2"><?= e(ucfirst($comm['type'])) ?></span>
-                            <?= e($comm['titre']) ?>
+                            <a href="<?= BASE_URL ?>client/communication.php?id=<?= $comm['id'] ?>" class="text-dark text-decoration-none"><?= e($comm['titre']) ?></a>
                         </h6>
                         <small class="text-muted text-nowrap ms-2"><?= date('d/m/Y H:i', strtotime($comm['date_publication'])) ?></small>
                     </div>

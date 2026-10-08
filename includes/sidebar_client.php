@@ -67,8 +67,13 @@ function client_menu_item(string $key, string $label, string $icon, string $href
             <?php endif; ?>
 
             <?php if ($role === 'prof'): ?>
+                <?= client_menu_item('eleves', 'Mes élèves', 'fa-users', 'client/prof/eleves.php', $active_menu) ?>
                 <?= client_menu_item('notes', 'Gestion des notes', 'fa-file-pen', 'client/prof/notes.php', $active_menu) ?>
                 <?= client_menu_item('presences', 'Gestion des présences', 'fa-clipboard-check', 'client/prof/presences.php', $active_menu) ?>
+            <?php endif; ?>
+
+            <?php if ($role === 'personnel'): ?>
+                <?= client_menu_item('eleves', 'Élèves & classes', 'fa-user-graduate', 'client/personnel/eleves.php', $active_menu) ?>
             <?php endif; ?>
 
             <li class="nav-section">Communication</li>

@@ -17,7 +17,7 @@ if (!$h) {
 $page_title = 'Modifier un créneau';
 $active_menu = 'horaires';
 
-$classes = prepareQuery('SELECT * FROM classes ORDER BY nom_classe')->fetchAll();
+$classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
 

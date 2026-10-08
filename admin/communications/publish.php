@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
     $destinataires = array_map('trim', explode(',', $comm['destinataires']));
-    $lien = 'client/eleve/communication.php?id=' . $id;
+    $lien = 'client/communication.php?id=' . $id;
     $message = mb_substr($comm['contenu'], 0, 200);
     $userIds = [];
 

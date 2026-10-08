@@ -66,10 +66,12 @@ $membreIds = array_map(function ($m) { return (int)$m['eleve_id']; }, $membres);
 $where = 'e.statut = :act';
 $params = ['act' => 'actif'];
 if (!empty($membreIds)) {
-    $where .= ' AND e.id NOT IN (' . implode(',', array_fill(0, count($membreIds), '?')) . ')';
+    $placeholders = [];
     foreach ($membreIds as $i => $mid) {
+        $placeholders[] = ':mid' . $i;
         $params['mid' . $i] = $mid;
     }
+    $where .= ' AND e.id NOT IN (' . implode(',', $placeholders) . ')';
 }
 
 $eleves_disponibles = prepareQuery(
@@ -86,7 +88,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php display_flash(); ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h4 class="mb-0">Gestion des membres : <?= e($club['nom_club']) ?></h4>
+    <h4 class="mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>Gestion des membres : <?= e($club['nom_club']) ?></h4>
     <div class="d-flex gap-2">
         <a href="view.php?id=<?= $club['id'] ?>" class="btn btn-outline-info"><i class="fa-solid fa-eye me-1"></i>Voir</a>
         <a href="index.php" class="btn btn-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Retour</a>
@@ -124,7 +126,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="table-light">
                             <tr>
                                 <th>Élève</th>
                                 <th>Classe</th>

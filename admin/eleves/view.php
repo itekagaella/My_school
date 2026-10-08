@@ -98,7 +98,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-header"><i class="fa-solid fa-file-pen me-2"></i>Notes récentes</div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
-                    <thead><tr><th>Matière</th><th>Note</th><th>Type</th><th>Date</th></tr></thead>
+                    <thead class="table-light"><tr><th>Matière</th><th>Note</th><th>Type</th><th>Date</th></tr></thead>
                     <tbody>
                         <?php if (empty($notes)): ?>
                             <tr><td colspan="4" class="text-center text-muted py-3">Aucune note enregistrée.</td></tr>

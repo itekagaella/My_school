@@ -21,7 +21,7 @@ function check_auto_logout(): void
  * Authentifie un utilisateur
  * @return array [succes, message, user?]
  */
-function login(string $email, string $password): array
+function login(string $email, string $password, ?string $profilAttendu = null): array
 {
     $email = strtolower(trim($email));
 
@@ -80,6 +80,17 @@ function login(string $email, string $password): array
         return [false, 'Identifiants incorrects. Il reste ' . (MAX_LOGIN_ATTEMPTS - $tentatives) . ' tentative(s).'];
     }
 
+    // Le profil sélectionné sur la page de connexion doit correspondre au rôle réel du compte.
+    // Test placé après vérification du mot de passe et avant toute session/2FA :
+    // le mot de passe est correct donc ni incrémentation ni remise à zéro des tentatives
+    // (pas de risque de verrouillage) et aucune session n'est ouverte en cas de mismatch.
+    if ($profilAttendu !== null && $user['role'] !== $profilAttendu) {
+        $role_label = ['eleve' => 'élève', 'prof' => 'professeur', 'personnel' => 'personnel', 'admin' => 'administrateur'];
+        $label = $role_label[$user['role']] ?? $user['role'];
+        log_connexion($user['id'], false, 'Profil sélectionné incompatible (' . $profilAttendu . ')');
+        return [false, 'Ce compte est un compte ' . $label . ', sélectionnez le bon profil.'];
+    }
+
     // Authentification réussie : réinitialiser les tentatives
     prepareQuery(
         'UPDATE utilisateurs SET tentatives_connexion = 0, derniere_connexion = NOW()
@@ -97,10 +108,17 @@ function login(string $email, string $password): array
             ['otp' => password_hash($otp, PASSWORD_BCRYPT), 'exp' => $expires, 'id' => $user['id']]
         );
 
-        // Envoyer le code par email (simulé / PHPMailer en production)
+        // Envoyer le code par email (réel si MAIL_ENABLED, sinon boîte de démo)
         $_SESSION['pending_2fa'] = $user['id'];
         $_SESSION['2fa_user_meta'] = ['nom' => $user['nom'], 'prenom' => $user['prenom'], 'email' => $user['email']];
         send_otp_email($user['email'], $user['nom'], $otp);
+        // Sans SMTP, le code serait inconnu de l'utilisateur : on l'expose sur
+        // la page de vérification (la session a déjà prouvé le mot de passe).
+        if (last_mail_delivered()) {
+            unset($_SESSION['otp_demo']);
+        } else {
+            $_SESSION['otp_demo'] = ['code' => $otp, 'exp' => time() + 300];
+        }
         return [true, '2FA_REQUIRED'];
     }
 
@@ -166,7 +184,7 @@ function verify_2fa(string $code): array
     )->fetch();
 
     if (!$user || !$user['dernier_code_otp'] || $user['dernier_code_exp'] < date('Y-m-d H:i:s', time())) {
-        unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts']);
+        unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo']);
         return [false, 'Code expiré. Veuillez vous reconnecter.'];
     }
 
@@ -180,7 +198,7 @@ function verify_2fa(string $code): array
         'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
         ['id' => $userId]
     );
-    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts']);
+    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
 
     start_user_session($userId);
     return [true, 'Authentification à deux facteurs réussie.'];
@@ -299,8 +317,8 @@ function require_role(array $roles): void
     require_login();
     $role = current_role();
     if (!in_array($role, $roles)) {
-        http_response_code(403);
-        // Rediriger vers le dashboard de son propre rôle
+        // Rediriger vers le dashboard de son propre rôle : la redirection doit
+        // être envoyée sans code 403, sinon les navigateurs l'ignorent.
         $redirects = [
             'admin' => 'admin/index.php',
             'eleve' => 'client/eleve/index.php',
@@ -379,6 +397,16 @@ function request_password_reset(string $email): array
     );
 
     send_reset_email($user['email'], $user['nom'], $token);
+    // Sans SMTP, afficher le lien de test uniquement en accès local
+    // (ailleurs : Admin > Journal > Boîte email)
+    if (!last_mail_delivered() && demo_disclose()) {
+        $_SESSION['reset_link_demo'] = [
+            'url' => BASE_URL . 'reset_password.php?token=' . urlencode($token),
+            'exp' => time() + 3600,
+        ];
+    } else {
+        unset($_SESSION['reset_link_demo']);
+    }
     log_activity('auth.password_reset_request', 'Demande de réinitialisation de mot de passe');
     return [true, 'Si l\'email existe, un lien de réinitialisation a été envoyé.'];
 }
@@ -410,20 +438,92 @@ function reset_password(string $token, string $newPassword): array
         ['id' => $row['id']]
     );
     log_activity('auth.password_reset', 'Mot de passe réinitialisé');
+    unset($_SESSION['reset_link_demo']);
     return [true, 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.'];
 }
 
 // ============================================================
-// ENVOI D'EMAILS (simulé - à remplacer par PHPMailer)
+// ENVOI D'EMAILS
+// MAIL_ENABLED=true  -> envoi réel via mail() (PHPMailer/SMTP en production)
+// MAIL_ENABLED=false -> journalisation dans storage/mail/ (boîte de démo,
+//                        consultable dans Admin > Journal > Boîte email)
 // ============================================================
 
 function send_email(string $to, string $subject, string $body): bool
 {
-    if (!MAIL_ENABLED) return true; // Mode simulation
+    $delivered = false;
 
-    // En production : utiliser PHPMailer
-    // mail($to, $subject, $body, "From: " . MAIL_FROM_NAME . " <" . MAIL_FROM . ">");
-    return true;
+    if (MAIL_ENABLED) {
+        $headers = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM . ">\r\n"
+                 . 'Reply-To: ' . MAIL_FROM . "\r\n"
+                 . "MIME-Version: 1.0\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n"
+                 . 'Date: ' . date('r') . "\r\n";
+        $delivered = (bool)@mail($to, $subject, $body, $headers);
+    }
+
+    // Trace systématique : l'email reste consultable même sans SMTP
+    email_store($to, $subject, $body, $delivered);
+
+    $GLOBALS['_mail_delivered'] = $delivered;
+    return $delivered;
+}
+
+/**
+ * Vrai si le dernier envoi a réellement été remis au transport mail().
+ */
+function last_mail_delivered(): bool
+{
+    return !empty($GLOBALS['_mail_delivered']);
+}
+
+/**
+ * Archive un email au format .eml dans storage/mail/ (boîte de démo).
+ */
+function email_store(string $to, string $subject, string $body, bool $delivered): void
+{
+    $dir = ROOT_PATH . 'storage/mail';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+    if (!is_dir($dir) || !is_writable($dir)) return;
+
+    $raw  = 'Date: ' . date('r') . "\r\n";
+    $raw .= 'To: ' . $to . "\r\n";
+    $raw .= 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM . ">\r\n";
+    $raw .= 'Subject: ' . str_replace(["\r", "\n"], '', $subject) . "\r\n";
+    $raw .= 'X-MySchool-Status: ' . ($delivered ? 'sent' : 'local') . "\r\n";
+    $raw .= "MIME-Version: 1.0\r\n";
+    $raw .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $raw .= "\r\n" . $body . "\r\n";
+
+    $file = $dir . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.eml';
+    @file_put_contents($file, $raw);
+}
+
+/**
+ * Vrai si la requête vient de la machine elle-même (127.0.0.1 / ::1).
+ * Utilisé pour n'afficher des secrets (lien de réinitialisation) qu'en local.
+ */
+function is_local_request(): bool
+{
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    return in_array($ip, ['127.0.0.1', '::1', 'localhost'], true);
+}
+
+/**
+ * Autorise l'affichage à l'écran des secrets générés sans SMTP
+ * (code OTP, lien de réinitialisation) : accès local ou DEMO_LINKS=true.
+ * Ailleurs, ces secrets restent consultables dans Admin > Boîte email.
+ */
+function demo_disclose(): bool
+{
+    if (is_local_request()) return true;
+    static $flag = null;
+    if ($flag === null) {
+        $flag = filter_var(config_env('DEMO_LINKS', 'false'), FILTER_VALIDATE_BOOLEAN);
+    }
+    return $flag;
 }
 
 function send_otp_email(string $to, string $name, string $otp): void

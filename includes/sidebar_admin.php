@@ -82,6 +82,18 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
             <?= admin_menu_item('rapports', 'Rapports', 'fa-file-lines', 'admin/rapports/index.php', $active_menu) ?>
             <?= admin_menu_item('stats', 'Statistiques', 'fa-chart-column', 'admin/stats/index.php', $active_menu) ?>
 
+            <li class="nav-section">Finances</li>
+            <?= admin_menu_item('finance', 'Tableau de bord', 'fa-coins', 'admin/finance/index.php', $active_menu) ?>
+            <?= admin_menu_item('finance_frais', 'Frais scolaires', 'fa-file-invoice-dollar', 'admin/finance/frais.php', $active_menu) ?>
+            <?= admin_menu_item('finance_paiements', 'Paiements', 'fa-receipt', 'admin/finance/paiements.php', $active_menu) ?>
+            <?= admin_menu_item('finance_eleves', 'Soldes élèves', 'fa-scale-balanced', 'admin/finance/eleves.php', $active_menu) ?>
+
+            <li class="nav-section">Discipline</li>
+            <?= admin_menu_item('discipline', 'Tableau de bord', 'fa-gavel', 'admin/discipline/index.php', $active_menu) ?>
+            <?= admin_menu_item('discipline_incidents', 'Incidents', 'fa-triangle-exclamation', 'admin/discipline/incidents.php', $active_menu) ?>
+            <?= admin_menu_item('discipline_sanctions', 'Sanctions', 'fa-scale-balanced', 'admin/discipline/sanctions.php', $active_menu) ?>
+            <?= admin_menu_item('discipline_convocations', 'Convocations', 'fa-envelope', 'admin/discipline/convocations.php', $active_menu) ?>
+
             <li class="nav-section">Administration</li>
             <?= admin_menu_item('parametres', 'Paramètres', 'fa-gears', 'admin/parametres/index.php', $active_menu) ?>
             <?= admin_menu_item('themes', 'Thèmes', 'fa-palette', 'admin/parametres/theme.php', $active_menu) ?>

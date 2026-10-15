@@ -74,6 +74,37 @@ $dernieres_comms = prepareQuery(
     ORDER BY date_publication DESC LIMIT 5"
 )->fetchAll();
 
+// --- Finances (lecture seule pour l'élève) ---
+$solde = eleve_solde($eleve_id);
+
+$derniers_paiements = prepareQuery(
+    "SELECT pa.montant, pa.date_paiement, pa.recu_numero, f.libelle
+     FROM paiements pa
+     LEFT JOIN frais_scolaires f ON f.id = pa.frais_id
+     WHERE pa.eleve_id = :eid
+     ORDER BY pa.date_paiement DESC, pa.id DESC LIMIT 5",
+    ['eid' => $eleve_id]
+)->fetchAll();
+
+// --- Discipline (lecture seule pour l'élève) ---
+$incidents_ouverts = prepareQuery(
+    "SELECT COUNT(*) AS nb FROM incidents_discipline WHERE eleve_id = :eid AND statut = 'ouvert'",
+    ['eid' => $eleve_id]
+)->fetch()['nb'] ?? 0;
+
+$sanctions_encours = prepareQuery(
+    "SELECT COUNT(*) AS nb FROM sanctions WHERE eleve_id = :eid AND statut = 'en_cours'",
+    ['eid' => $eleve_id]
+)->fetch()['nb'] ?? 0;
+
+$convocations_a_venir = prepareQuery(
+    "SELECT id, date_convocation, heure, motif, statut
+     FROM convocations
+     WHERE eleve_id = :eid AND date_convocation >= CURRENT_DATE
+     ORDER BY date_convocation ASC LIMIT 5",
+    ['eid' => $eleve_id]
+)->fetchAll();
+
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar_client.php';
 ?>
@@ -122,6 +153,142 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         </div>
     </div>
 </div>
+
+<!-- FINANCES -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-green">
+            <div>
+                <div class="stat-label">Total payé</div>
+                <div class="stat-number"><?= format_montant($solde['paye']) ?></div>
+            </div>
+            <i class="fa-solid fa-money-bill-wave stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-orange">
+            <div>
+                <div class="stat-label">Solde / Reste à payer</div>
+                <div class="stat-number"><?= format_montant($solde['solde']) ?></div>
+            </div>
+            <i class="fa-solid fa-scale-balanced stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-purple">
+            <div>
+                <div class="stat-label">Montant attendu</div>
+                <div class="stat-number"><?= format_montant($solde['attendu']) ?></div>
+            </div>
+            <i class="fa-solid fa-calculator stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa-solid fa-receipt me-2"></i>Mes derniers paiements</span>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($derniers_paiements)): ?>
+                    <div class="text-center text-muted py-4">Aucun paiement enregistré</div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Montant</th>
+                                    <th>Frais</th>
+                                    <th>N° reçu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($derniers_paiements as $p): ?>
+                                    <tr>
+                                        <td><small><?= date('d/m/Y', strtotime($p['date_paiement'])) ?></small></td>
+                                        <td><?= format_montant($p['montant']) ?></td>
+                                        <td><?= e($p['libelle'] ?? '-') ?></td>
+                                        <td><?= e($p['recu_numero']) ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DISCIPLINE -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-red">
+            <div>
+                <div class="stat-label">Incidents ouverts</div>
+                <div class="stat-number"><?= (int)$incidents_ouverts ?></div>
+            </div>
+            <i class="fa-solid fa-triangle-exclamation stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-orange">
+            <div>
+                <div class="stat-label">Sanctions en cours</div>
+                <div class="stat-number"><?= (int)$sanctions_encours ?></div>
+            </div>
+            <i class="fa-solid fa-gavel stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="stat-card stat-blue">
+            <div>
+                <div class="stat-label">Convocations à venir</div>
+                <div class="stat-number"><?= count($convocations_a_venir) ?></div>
+            </div>
+            <i class="fa-solid fa-envelope stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+<?php if (!empty($convocations_a_venir)): ?>
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
+        <div class="card h-100">
+            <div class="card-header">
+                <span><i class="fa-solid fa-calendar-check me-2"></i>Mes convocations à venir</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Heure</th>
+                                <th>Motif</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($convocations_a_venir as $c): ?>
+                                <tr>
+                                    <td><?= date('d/m/Y', strtotime($c['date_convocation'])) ?></td>
+                                    <td><?= e($c['heure'] ? substr($c['heure'],0,5) : '-') ?></td>
+                                    <td><?= e($c['motif']) ?></td>
+                                    <td><span class="badge bg-info text-capitalize"><?= e($c['statut']) ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="row g-3">
     <div class="col-lg-8">

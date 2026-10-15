@@ -7,7 +7,7 @@ $page_title = 'Ajouter un membre du personnel';
 $active_menu = 'personnel';
 
 $error = '';
-$d = ['nom' => '', 'prenom' => '', 'fonction' => '', 'tel' => '', 'email' => '', 'email_compte' => ''];
+$d = ['nom' => '', 'prenom' => '', 'fonction' => '', 'tel' => '', 'email' => '', 'email_compte' => '', 'role' => 'surveillant'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
@@ -19,10 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $d['tel'] = clean_input($_POST['tel'] ?? '');
         $d['email'] = strtolower(trim($_POST['email'] ?? ''));
         $d['email_compte'] = strtolower(trim($_POST['email_compte'] ?? ''));
+        $d['role'] = $_POST['role'] ?? 'surveillant';
         $motDePasse = $_POST['mot_de_passe'] ?? '';
 
         if (empty($d['nom']) || empty($d['prenom']) || empty($d['fonction'])) {
             $error = 'Nom, prénom et fonction sont obligatoires.';
+        } elseif (!array_key_exists($d['role'], personnel_profil_options())) {
+            $error = 'Profil de personnel invalide.';
         } elseif ($d['email'] && !is_valid_email($d['email'])) {
             $error = 'Adresse email invalide.';
         } elseif ($d['email_compte'] && !is_valid_email($d['email_compte'])) {
@@ -50,9 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $stmtUser = getDB()->prepare(
                         "INSERT INTO utilisateurs (nom, prenom, email, password_hash, role, actif, created_at)
-                         VALUES (:n, :p, :e, :pw, 'personnel', TRUE, NOW())"
+                         VALUES (:n, :p, :e, :pw, :role, TRUE, NOW())"
                     );
-                    $stmtUser->execute([':n' => $d['nom'], ':p' => $d['prenom'], ':e' => $emailCompte, ':pw' => $hash]);
+                    $stmtUser->execute([':n' => $d['nom'], ':p' => $d['prenom'], ':e' => $emailCompte, ':pw' => $hash, ':role' => $d['role']]);
                     $userId = (int)getDB()->lastInsertId();
 
                     $matricule = 'P' . str_pad($userId, 4, '0', STR_PAD_LEFT);
@@ -101,6 +104,15 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <div class="col-md-4">
                     <label class="form-label required">Fonction</label>
                     <input type="text" name="fonction" class="form-control" value="<?= e($d['fonction']) ?>" required placeholder="Ex: Enseignant, Secrétaire...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label required">Profil d'accès</label>
+                    <select name="role" class="form-select" required>
+                        <?php foreach (personnel_profil_options() as $r => $l): ?>
+                            <option value="<?= $r ?>" <?= $d['role'] === $r ? 'selected' : '' ?>><?= e($l) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-text">Détermine l'espace et les permissions du membre.</div>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Téléphone</label>

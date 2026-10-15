@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $roleId = (int)($_POST['role_id'] ?? 0);
             // Pas de suppression des rôles système
             $r = prepareQuery('SELECT nom_role FROM roles WHERE id = :id', ['id'=>$roleId])->fetch();
-            if ($r && in_array($r['nom_role'], ['admin','eleve','prof','personnel'])) {
+            if ($r && in_array($r['nom_role'], ['admin','eleve','prof','personnel','surveillant','finance','discipline'])) {
                 set_flash('error', 'Impossible de supprimer un rôle système.');
             } else {
                 prepareQuery('DELETE FROM roles WHERE id = :id', ['id'=>$roleId]);
@@ -79,7 +79,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                             <strong><?= ucfirst(e($role['nom_role'])) ?></strong>
                             <div><small class="text-muted"><?= e($role['description']) ?></small></div>
                         </div>
-                        <?php if (!in_array($role['nom_role'], ['admin','eleve','prof','personnel'])): ?>
+                        <?php if (!in_array($role['nom_role'], ['admin','eleve','prof','personnel','surveillant','finance','discipline'])): ?>
                         <form method="post" action="">
                             <?= csrf_field() ?>
                             <input type="hidden" name="action" value="delete_role">

@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Veuillez remplir tous les champs obligatoires.';
         } elseif (!is_valid_email($u['email'])) {
             $error = 'Adresse email invalide.';
-        } elseif (!in_array($u['role'], ['admin','eleve','prof','personnel'])) {
+        } elseif (!in_array($u['role'], array_keys(roles_selectable()), true)) {
             $error = 'Rôle invalide.';
         } elseif (strlen($password) < 8) {
             $error = 'Le mot de passe doit contenir au moins 8 caractères.';
@@ -49,6 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ['n'=>$u['nom'], 'p'=>$u['prenom'], 'e'=>$u['email'], 'h'=>$hash, 'r'=>$u['role'],
                      'a'=>$u['actif'], 'd'=>$u['deux_facteurs']]
                 );
+                // Un rôle de la famille « personnel » doit disposer d'une fiche
+                // personnel pour accéder à son espace (surveillant/finance/discipline).
+                if (in_array($u['role'], personnel_roles(), true)) {
+                    ensure_personnel_profile((int)getDB()->lastInsertId());
+                }
                 log_activity('users.create', 'Création utilisateur ' . $u['email'] . ' (rôle ' . $u['role'] . ')');
                 set_flash('success', 'Utilisateur créé avec succès.');
                 header('Location: index.php');
@@ -85,10 +90,9 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <div class="col-md-6">
                     <label class="form-label required">Rôle</label>
                     <select name="role" class="form-select">
-                        <option value="eleve" <?= $u['role']==='eleve'?'selected':'' ?>>Élève</option>
-                        <option value="prof" <?= $u['role']==='prof'?'selected':'' ?>>Professeur</option>
-                        <option value="personnel" <?= $u['role']==='personnel'?'selected':'' ?>>Personnel</option>
-                        <option value="admin" <?= $u['role']==='admin'?'selected':'' ?>>Administrateur</option>
+                        <?php foreach (roles_selectable() as $r=>$l): ?>
+                            <option value="<?= $r ?>" <?= $u['role']===$r?'selected':'' ?>><?= e($l) ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <div class="form-text">Le rôle détermine les permissions d'accès.</div>
                 </div>

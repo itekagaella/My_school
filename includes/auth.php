@@ -84,8 +84,11 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
     // Test placé après vérification du mot de passe et avant toute session/2FA :
     // le mot de passe est correct donc ni incrémentation ni remise à zéro des tentatives
     // (pas de risque de verrouillage) et aucune session n'est ouverte en cas de mismatch.
-    if ($profilAttendu !== null && $user['role'] !== $profilAttendu) {
-        $role_label = ['eleve' => 'élève', 'prof' => 'professeur', 'personnel' => 'personnel', 'admin' => 'administrateur'];
+    // Le profil « personnel » regroupe la famille des agents : surveillant, finance, discipline.
+    $profilOk = ($user['role'] === $profilAttendu)
+        || ($profilAttendu === 'personnel' && in_array($user['role'], personnel_roles(), true));
+    if ($profilAttendu !== null && !$profilOk) {
+        $role_label = role_labels();
         $label = $role_label[$user['role']] ?? $user['role'];
         log_connexion($user['id'], false, 'Profil sélectionné incompatible (' . $profilAttendu . ')');
         return [false, 'Ce compte est un compte ' . $label . ', sélectionnez le bon profil.'];
@@ -98,6 +101,12 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
         ['id' => $user['id']]
     );
     log_connexion($user['id'], true);
+
+    // Auto-réparation : tout compte de la famille « personnel » doit avoir une
+    // fiche personnel pour accéder à son espace (créée ici si elle manque).
+    if (in_array($user['role'], personnel_roles(), true)) {
+        ensure_personnel_profile((int)$user['id']);
+    }
 
     // Si 2FA activée, générer et stocker le code OTP dans une session temporaire
     if ($user['deux_facteurs']) {
@@ -319,13 +328,7 @@ function require_role(array $roles): void
     if (!in_array($role, $roles)) {
         // Rediriger vers le dashboard de son propre rôle : la redirection doit
         // être envoyée sans code 403, sinon les navigateurs l'ignorent.
-        $redirects = [
-            'admin' => 'admin/index.php',
-            'eleve' => 'client/eleve/index.php',
-            'prof'  => 'client/prof/index.php',
-            'personnel' => 'client/personnel/index.php',
-        ];
-        header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+        header('Location: ' . BASE_URL . role_home((string)$role));
         exit;
     }
 }

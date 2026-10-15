@@ -16,9 +16,10 @@ try {
     $nb_notif = $r['nb'] ?? 0;
 } catch (Exception $e) { $nb_notif = 0; }
 
-$role_label = ['eleve' => 'Élève', 'prof' => 'Professeur', 'personnel' => 'Personnel'];
-$role_icon = ['eleve' => 'fa-user-graduate', 'prof' => 'fa-chalkboard-user', 'personnel' => 'fa-briefcase'];
-$role_base = ['eleve' => 'client/eleve', 'prof' => 'client/prof', 'personnel' => 'client/personnel'];
+$role_label = role_labels_court();
+$role_icon = role_icons();
+$role_base = role_base_dir($role);
+$home = role_home($role);
 
 function client_menu_item(string $key, string $label, string $icon, string $href, string $active): string {
     $isActive = ($active === $key) ? 'active' : '';
@@ -28,7 +29,7 @@ function client_menu_item(string $key, string $label, string $icon, string $href
 ?>
 <aside class="sidebar sidebar-client" id="sidebar">
     <div class="sidebar-header">
-        <a href="<?= BASE_URL . $role_base[$role] ?>/index.php" class="sidebar-brand">
+        <a href="<?= BASE_URL . $home ?>" class="sidebar-brand">
             <span class="grad-cap"><i class="fa-solid fa-graduation-cap"></i></span>
             <span class="brand-text">My_School</span>
         </a>
@@ -54,15 +55,17 @@ function client_menu_item(string $key, string $label, string $icon, string $href
     <nav class="sidebar-nav">
         <ul class="nav flex-column">
             <li class="nav-section">Mon espace</li>
-            <?= client_menu_item('dashboard', 'Tableau de bord', 'fa-gauge-high', $role_base[$role] . '/index.php', $active_menu) ?>
+            <?= client_menu_item('dashboard', 'Tableau de bord', 'fa-gauge-high', $home, $active_menu) ?>
             <?= client_menu_item('profil', 'Mon profil', 'fa-user', 'client/profil/index.php', $active_menu) ?>
 
             <li class="nav-section">Consultation</li>
-            <?= client_menu_item('horaires', 'Emploi du temps', 'fa-calendar-days', $role_base[$role] . '/horaires.php', $active_menu) ?>
+            <?= client_menu_item('horaires', 'Emploi du temps', 'fa-calendar-days', $role_base . '/horaires.php', $active_menu) ?>
 
             <?php if ($role === 'eleve'): ?>
                 <?= client_menu_item('notes', 'Mes notes', 'fa-file-pen', 'client/eleve/notes.php', $active_menu) ?>
                 <?= client_menu_item('presences', 'Mes présences', 'fa-clipboard-check', 'client/eleve/presences.php', $active_menu) ?>
+                <?= client_menu_item('finance', 'Finance', 'fa-wallet', 'client/eleve/finance.php', $active_menu) ?>
+                <?= client_menu_item('discipline', 'Discipline', 'fa-scale-balanced', 'client/eleve/discipline.php', $active_menu) ?>
                 <?= client_menu_item('clubs', 'Clubs scolaires', 'fa-people-group', 'client/eleve/clubs.php', $active_menu) ?>
             <?php endif; ?>
 
@@ -76,9 +79,32 @@ function client_menu_item(string $key, string $label, string $icon, string $href
                 <?= client_menu_item('eleves', 'Élèves & classes', 'fa-user-graduate', 'client/personnel/eleves.php', $active_menu) ?>
             <?php endif; ?>
 
+            <?php if ($role === 'surveillant'): ?>
+                <li class="nav-section">Surveillance</li>
+                <?= client_menu_item('eleves', 'Élèves & classes', 'fa-user-graduate', 'client/personnel/eleves.php', $active_menu) ?>
+                <?= client_menu_item('presences', 'Suivi des présences', 'fa-clipboard-check', 'client/surveillant/presences.php', $active_menu) ?>
+                <?= client_menu_item('incidents', 'Incidents signalés', 'fa-triangle-exclamation', 'client/surveillant/incidents.php', $active_menu) ?>
+            <?php endif; ?>
+
+            <?php if ($role === 'finance'): ?>
+                <li class="nav-section">Finances</li>
+                <?= client_menu_item('eleves', 'Élèves & soldes', 'fa-user-graduate', 'client/finance/eleves.php', $active_menu) ?>
+                <?= client_menu_item('frais', 'Frais scolaires', 'fa-file-invoice-dollar', 'client/finance/frais.php', $active_menu) ?>
+                <?= client_menu_item('paiements', 'Paiements & reçus', 'fa-coins', 'client/finance/paiements.php', $active_menu) ?>
+                <?= client_menu_item('rapport', 'Rapport financier', 'fa-chart-line', 'client/finance/rapport.php', $active_menu) ?>
+            <?php endif; ?>
+
+            <?php if ($role === 'discipline'): ?>
+                <li class="nav-section">Discipline</li>
+                <?= client_menu_item('eleves', 'Élèves', 'fa-user-graduate', 'client/discipline/eleves.php', $active_menu) ?>
+                <?= client_menu_item('incidents', 'Incidents', 'fa-triangle-exclamation', 'client/discipline/incidents.php', $active_menu) ?>
+                <?= client_menu_item('sanctions', 'Sanctions', 'fa-gavel', 'client/discipline/sanctions.php', $active_menu) ?>
+                <?= client_menu_item('convocations', 'Convocations', 'fa-envelope', 'client/discipline/convocations.php', $active_menu) ?>
+            <?php endif; ?>
+
             <li class="nav-section">Communication</li>
-            <?= client_menu_item('communications', 'Communications', 'fa-bullhorn', $role_base[$role] . '/communications.php', $active_menu) ?>
-            <?= client_menu_item('documents', 'Documents', 'fa-folder-open', $role_base[$role] . '/documents.php', $active_menu) ?>
+            <?= client_menu_item('communications', 'Communications', 'fa-bullhorn', $role_base . '/communications.php', $active_menu) ?>
+            <?= client_menu_item('documents', 'Documents', 'fa-folder-open', $role_base . '/documents.php', $active_menu) ?>
             <?= client_menu_item('chat', 'Chat', 'fa-comments', 'client/chat.php', $active_menu) ?>
         </ul>
     </nav>

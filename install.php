@@ -3,7 +3,7 @@
  * Installeur web My_School
  *
  * Crée la base PostgreSQL, charge le schéma (config/init.sql) puis les
- * corrections (config/migrations/corrections.sql), et génère le fichier .env.
+ * migrations (config/migrations/*.sql), et génère le fichier .env.
  *
  * Utile pour une installation manuelle sur Laragon/XAMPP ou sur un poste où
  * PostgreSQL est déjà installé.
@@ -266,8 +266,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $lockReason === null) {
 
                 // 3. Appliquer les corrections de bugs (hors transaction :
                 //    CREATE OR REPLACE FUNCTION est idempotent de toute façon)
+                //    Chaque fichier .sql de config/migrations est appliqué dans
+                //    l'ordre alphabétique (corrections puis migrations métier).
                 if (is_readable(MIGRATIONS_SQL)) {
                     run_sql_file($pdo, MIGRATIONS_SQL);
+                }
+                foreach (glob(__DIR__ . '/config/migrations/*.sql') ?: [] as $migrationFile) {
+                    if (realpath($migrationFile) === realpath(MIGRATIONS_SQL)) continue;
+                    if (is_readable($migrationFile)) {
+                        run_sql_file($pdo, $migrationFile);
+                    }
                 }
 
                 // 4. Personnaliser l'administrateur et l'établissement.

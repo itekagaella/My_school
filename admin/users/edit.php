@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             set_flash('error', 'Champs obligatoires manquants.');
         } elseif (!is_valid_email($email)) {
             set_flash('error', 'Email invalide.');
-        } elseif (!in_array($role, ['admin','eleve','prof','personnel'])) {
+        } elseif (!in_array($role, array_keys(roles_selectable()), true)) {
             set_flash('error', 'Rôle invalide.');
         } else {
             $dup = prepareQuery('SELECT id FROM utilisateurs WHERE email = :e AND id <> :id', ['e'=>$email,'id'=>$id])->fetch();
@@ -45,6 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'UPDATE utilisateurs SET nom=:n, prenom=:p, email=:e, role=:r, actif=:a, deux_facteurs=:d, updated_at=NOW() WHERE id=:id',
                     ['n'=>$nom,'p'=>$prenom,'e'=>$email,'r'=>$role,'a'=>$actif,'d'=>$deux_facteurs,'id'=>$id]
                 );
+                // Attribuer un rôle de la famille « personnel » crée la fiche
+                // personnel manquante, pour que l'espace du membre soit accessible.
+                if (in_array($role, personnel_roles(), true)) {
+                    ensure_personnel_profile($id);
+                }
                 log_activity('users.edit', 'Modification de l\'utilisateur ' . $email);
                 set_flash('success', 'Utilisateur mis à jour.');
             }
@@ -106,8 +111,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <div class="col-md-6">
                             <label class="form-label required">Rôle</label>
                             <select name="role" class="form-select">
-                                <?php foreach (['eleve'=>'Élève','prof'=>'Professeur','personnel'=>'Personnel','admin'=>'Administrateur'] as $r=>$l): ?>
-                                    <option value="<?= $r ?>" <?= $user['role']===$r?'selected':'' ?>><?= $l ?></option>
+                                <?php foreach (roles_selectable() as $r=>$l): ?>
+                                    <option value="<?= $r ?>" <?= $user['role']===$r?'selected':'' ?>><?= e($l) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>

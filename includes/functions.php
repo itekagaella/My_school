@@ -360,6 +360,300 @@ function download_file(string $filepath, string $displayName): void
 }
 
 // ============================================================
+// RÔLES ET PROFILS UTILISATEUR
+// ============================================================
+
+/**
+ * Rôles appartenant à la famille « personnel » (agents non-enseignants).
+ * Le profil générique « personnel » est conservé pour compatibilité.
+ */
+function personnel_roles(): array
+{
+    return ['personnel', 'surveillant', 'finance', 'discipline'];
+}
+
+/**
+ * Libellés lisibles des rôles (au pluriel pour les listes déroulantes).
+ */
+function role_labels(): array
+{
+    return [
+        'admin'      => 'administrateur',
+        'eleve'      => 'élève',
+        'prof'       => 'professeur',
+        'personnel'  => 'personnel',
+        'surveillant'=> 'surveillant',
+        'finance'    => 'gestionnaire financier',
+        'discipline' => 'responsable discipline',
+    ];
+}
+
+/**
+ * Libellés courts (singulier, affichage badge/menu).
+ */
+function role_labels_court(): array
+{
+    return [
+        'admin'      => 'Administrateur',
+        'eleve'      => 'Élève',
+        'prof'       => 'Professeur',
+        'personnel'  => 'Personnel',
+        'surveillant'=> 'Surveillant',
+        'finance'    => 'Finance',
+        'discipline' => 'Discipline',
+    ];
+}
+
+/**
+ * Icône Font Awesome associée à un rôle.
+ */
+function role_icons(): array
+{
+    return [
+        'admin'      => 'fa-shield-halved',
+        'eleve'      => 'fa-user-graduate',
+        'prof'       => 'fa-chalkboard-user',
+        'personnel'  => 'fa-briefcase',
+        'surveillant'=> 'fa-eye',
+        'finance'    => 'fa-coins',
+        'discipline' => 'fa-gavel',
+    ];
+}
+
+/**
+ * Dashboard d'accueil (chemin relatif) selon le rôle.
+ */
+function role_home(string $role): string
+{
+    $map = [
+        'admin'      => 'admin/index.php',
+        'eleve'      => 'client/eleve/index.php',
+        'prof'       => 'client/prof/index.php',
+        'personnel'  => 'client/personnel/index.php',
+        'surveillant'=> 'client/surveillant/index.php',
+        'finance'    => 'client/finance/index.php',
+        'discipline' => 'client/discipline/index.php',
+    ];
+    return $map[$role] ?? 'index.php';
+}
+
+/**
+ * Espace client (dossier) associé à un rôle de la famille personnel.
+ * Tous les agents partagent certaines pages (horaires, communications, documents)
+ * situées dans client/personnel/ ; seules les pages métier sont propres au rôle.
+ */
+function role_base_dir(string $role): string
+{
+    $map = [
+        'eleve'      => 'client/eleve',
+        'prof'       => 'client/prof',
+        'personnel'  => 'client/personnel',
+        'surveillant'=> 'client/personnel',
+        'finance'    => 'client/personnel',
+        'discipline' => 'client/personnel',
+    ];
+    return $map[$role] ?? 'client/personnel';
+}
+
+/**
+ * Liste [role => libellé] pour les listes déroulantes d'administration.
+ */
+function roles_selectable(): array
+{
+    return [
+        'eleve'      => 'Élève',
+        'prof'       => 'Professeur',
+        'surveillant'=> 'Personnel — Surveillant',
+        'finance'    => 'Personnel — Finance',
+        'discipline' => 'Personnel — Discipline',
+        'personnel'  => 'Personnel — Générique',
+        'admin'      => 'Administrateur',
+    ];
+}
+
+/**
+ * Valide qu'un rôle fait partie des rôles système autorisés.
+ */
+function role_is_valid(string $role): bool
+{
+    return array_key_exists($role, roles_selectable());
+}
+
+/**
+ * Profils d'accès proposés lors de la création d'un membre du personnel.
+ */
+function personnel_profil_options(): array
+{
+    return [
+        'surveillant'=> 'Surveillant — surveillance des élèves',
+        'finance'    => 'Gestionnaire financier — frais & paiements',
+        'discipline' => 'Responsable discipline — incidents & sanctions',
+        'personnel'  => 'Personnel — générique',
+    ];
+}
+
+/**
+ * Garantit qu'un utilisateur de la famille « personnel » possède une fiche
+ * dans la table personnel. La fiche est créée automatiquement si elle manque
+ * (compte créé depuis le module Utilisateurs, import, etc.), afin que les
+ * espaces surveillant / finance / discipline restent accessibles.
+ * Renvoie la fiche (existante ou créée), ou null si l'utilisateur est inconnu.
+ */
+function ensure_personnel_profile(int $userId): ?array
+{
+    $pers = prepareQuery('SELECT * FROM personnel WHERE user_id = :u', ['u' => $userId])->fetch();
+    if ($pers) {
+        return $pers;
+    }
+
+    $u = prepareQuery('SELECT nom, prenom, email FROM utilisateurs WHERE id = :id', ['id' => $userId])->fetch();
+    if (!$u) {
+        return null;
+    }
+
+    // Même convention que le module Personnel : matricule dérivé de l'id.
+    $matricule = 'P' . str_pad((string)$userId, 4, '0', STR_PAD_LEFT);
+    if (prepareQuery('SELECT 1 FROM personnel WHERE matricule = :m', ['m' => $matricule])->fetch()) {
+        $matricule .= '-' . substr(bin2hex(random_bytes(2)), 0, 4);
+    }
+
+    prepareQuery(
+        "INSERT INTO personnel (user_id, matricule, nom, prenom, email, fonction, statut, created_at)
+         VALUES (:u, :m, :n, :p, :e, 'Personnel', 'actif', NOW())",
+        ['u' => $userId, 'm' => $matricule, 'n' => $u['nom'], 'p' => $u['prenom'], 'e' => $u['email']]
+    );
+
+    return prepareQuery('SELECT * FROM personnel WHERE user_id = :u', ['u' => $userId])->fetch();
+}
+
+// ============================================================
+// FINANCES
+// ============================================================
+
+/**
+ * Devise affichée (paramétrable via « Admin > Paramètres », clé « devise »).
+ */
+function devise(): string
+{
+    $d = trim((string) get_param('devise', 'FBu'));
+    return $d !== '' ? $d : 'FBu';
+}
+
+/**
+ * Formate un montant monétaire (ex. 12 500,00 FBu).
+ */
+function format_montant($montant): string
+{
+    return number_format((float)$montant, 2, ',', ' ') . ' ' . devise();
+}
+
+/**
+ * Génère un numéro de reçu unique de la forme REC-AAAAMMJJ-0001.
+ */
+function generer_numero_recu(): string
+{
+    $prefix = 'REC-' . date('Ymd') . '-';
+    $row = prepareQuery(
+        "SELECT recu_numero FROM paiements WHERE recu_numero LIKE :p ORDER BY id DESC LIMIT 1",
+        ['p' => $prefix . '%']
+    )->fetch();
+    $seq = 1;
+    if ($row && preg_match('/-(\d+)$/', $row['recu_numero'], $m)) {
+        $seq = (int)$m[1] + 1;
+    }
+    return $prefix . str_pad((string)$seq, 4, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Modes de paiement autorisés.
+ * Seul le paiement en espèces est accepté.
+ */
+function modes_paiement(): array
+{
+    return [
+        'especes' => 'Espèces',
+    ];
+}
+
+/**
+ * Solde financier d'un élève : montant attendu (frais obligatoires actifs du
+ * niveau de sa classe + frais globaux) moins le total déjà payé.
+ *
+ * @return array{attendu: float, paye: float, solde: float}
+ */
+function eleve_solde(int $eleveId): array
+{
+    try {
+        $row = prepareQuery(
+            "SELECT
+                COALESCE((SELECT SUM(f.montant) FROM frais_scolaires f
+                          WHERE f.actif = TRUE AND f.obligatoire = TRUE
+                            AND (f.niveau IS NULL OR f.niveau = c.niveau)), 0) AS attendu,
+                COALESCE((SELECT SUM(pa.montant) FROM paiements pa WHERE pa.eleve_id = e.id), 0) AS paye
+             FROM eleves e
+             LEFT JOIN classes c ON c.id = e.classe_id
+             WHERE e.id = :id",
+            ['id' => $eleveId]
+        )->fetch();
+    } catch (Exception $e) {
+        return ['attendu' => 0.0, 'paye' => 0.0, 'solde' => 0.0];
+    }
+    $attendu = (float)($row['attendu'] ?? 0);
+    $paye = (float)($row['paye'] ?? 0);
+    return ['attendu' => $attendu, 'paye' => $paye, 'solde' => $attendu - $paye];
+}
+
+/**
+ * Envoie des données tabulaires en CSV téléchargeable (séparateur « ; »).
+ *
+ * @param string $filename Nom du fichier
+ * @param array<int,string> $headers En-têtes de colonnes
+ * @param array<int,array<int,mixed>> $rows Lignes
+ */
+function export_csv(string $filename, array $headers, array $rows): void
+{
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    $out = fopen('php://output', 'w');
+    // BOM UTF-8 pour Excel
+    fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, $headers, ';');
+    foreach ($rows as $row) {
+        fputcsv($out, $row, ';');
+    }
+    fclose($out);
+    exit;
+}
+
+// ============================================================
+// DISCIPLINE
+// ============================================================
+
+/**
+ * Niveaux de gravité d'un incident disciplinaire.
+ */
+function gravites_incident(): array
+{
+    return ['faible' => 'Faible', 'moyenne' => 'Moyenne', 'grave' => 'Grave'];
+}
+
+/**
+ * Statuts d'un incident disciplinaire.
+ */
+function statuts_incident(): array
+{
+    return ['ouvert' => 'Ouvert', 'traite' => 'Traité', 'clos' => 'Clos'];
+}
+
+/**
+ * Statuts d'une sanction.
+ */
+function statuts_sanction(): array
+{
+    return ['en_cours' => 'En cours', 'terminee' => 'Terminée', 'annulee' => 'Annulée'];
+}
+
+// ============================================================
 // FONCTIONS DE PAGINATION
 // ============================================================
 

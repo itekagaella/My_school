@@ -27,7 +27,9 @@ if ($statut !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $personnel = prepareQuery(
-    "SELECT p.* FROM personnel p $whereSql ORDER BY p.nom, p.prenom",
+    "SELECT p.*, u.role AS role_compte FROM personnel p
+     LEFT JOIN utilisateurs u ON u.id = p.user_id
+     $whereSql ORDER BY p.nom, p.prenom",
     $params
 )->fetchAll();
 
@@ -79,6 +81,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <th>Matricule</th>
                         <th>Nom & Prénom</th>
                         <th>Fonction</th>
+                        <th>Profil</th>
                         <th>Téléphone</th>
                         <th>Email</th>
                         <th>Statut</th>
@@ -87,7 +90,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 </thead>
                 <tbody>
                     <?php if (empty($personnel)): ?>
-                        <tr><td colspan="7" class="text-center text-muted py-4">Aucun membre du personnel trouvé.</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">Aucun membre du personnel trouvé.</td></tr>
                     <?php else: foreach ($personnel as $p): ?>
                         <tr>
                             <td class="small text-nowrap"><?= e($p['matricule']) ?></td>
@@ -100,6 +103,11 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                 </div>
                             </td>
                             <td><span class="badge bg-light text-dark"><?= e($p['fonction']) ?></span></td>
+                            <td>
+                                <?php if (!empty($p['role_compte'])): ?>
+                                    <span class="badge badge-role badge-role-<?= e($p['role_compte']) ?>"><?= e(role_labels_court()[$p['role_compte']] ?? $p['role_compte']) ?></span>
+                                <?php else: ?><span class="text-muted small">-</span><?php endif; ?>
+                            </td>
                             <td class="small"><?= e($p['tel']) ?></td>
                             <td class="small"><?= e($p['email']) ?></td>
                             <td>

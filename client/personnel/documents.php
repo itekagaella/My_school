@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
-require_role(['personnel']);
+require_role(personnel_roles());
 $user = current_user();
 $page_title = 'Documents';
 $active_menu = 'documents';

@@ -11,6 +11,13 @@ if (!$p) {
     exit;
 }
 
+// Rôle du compte lié (détermine le profil : surveillant / finance / discipline)
+$compte = $p['user_id']
+    ? prepareQuery('SELECT id, role, email FROM utilisateurs WHERE id = :id', ['id' => $p['user_id']])->fetch()
+    : null;
+$roleActuel = $compte['role'] ?? 'personnel';
+if (!array_key_exists($roleActuel, personnel_profil_options())) $roleActuel = 'personnel';
+
 $page_title = 'Modifier un membre du personnel';
 $active_menu = 'personnel';
 
@@ -24,9 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tel = clean_input($_POST['tel'] ?? '');
         $email = strtolower(trim($_POST['email'] ?? ''));
         $statut = $_POST['statut'] ?? $p['statut'];
+        $role = $_POST['role'] ?? $roleActuel;
 
         if (empty($nom) || empty($prenom) || empty($fonction)) {
             $error = 'Nom, prénom et fonction sont obligatoires.';
+        } elseif (!array_key_exists($role, personnel_profil_options())) {
+            $error = 'Profil de personnel invalide.';
         } elseif ($email && !is_valid_email($email)) {
             $error = 'Adresse email invalide.';
         } else {
@@ -36,14 +46,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (!$error) {
-                prepareQuery(
-                    "UPDATE personnel SET nom=:n, prenom=:p, fonction=:f, tel=:t, email=:e, statut=:st WHERE id=:id",
-                    ['n' => $nom, 'p' => $prenom, 'f' => $fonction, 't' => $tel, 'e' => $email, 'st' => $statut, 'id' => $id]
-                );
-                log_activity('personnel.edit', 'Modification du membre ' . $p['matricule']);
-                set_flash('success', 'Membre du personnel mis à jour.');
-                header('Location: view.php?id=' . $id);
-                exit;
+                try {
+                    getDB()->beginTransaction();
+
+                    prepareQuery(
+                        "UPDATE personnel SET nom=:n, prenom=:p, fonction=:f, tel=:t, email=:e, statut=:st WHERE id=:id",
+                        ['n' => $nom, 'p' => $prenom, 'f' => $fonction, 't' => $tel, 'e' => $email, 'st' => $statut, 'id' => $id]
+                    );
+
+                    // Mise à jour du profil d'accès (rôle du compte lié)
+                    if ($compte) {
+                        prepareQuery(
+                            'UPDATE utilisateurs SET role = :r, nom = :n, prenom = :p, updated_at = NOW() WHERE id = :uid',
+                            ['r' => $role, 'n' => $nom, 'p' => $prenom, 'uid' => $compte['id']]
+                        );
+                    }
+
+                    getDB()->commit();
+
+                    log_activity('personnel.edit', 'Modification du membre ' . $p['matricule'] . ' (profil ' . $role . ')');
+                    set_flash('success', 'Membre du personnel mis à jour.');
+                    header('Location: view.php?id=' . $id);
+                    exit;
+                } catch (Exception $ex) {
+                    getDB()->rollBack();
+                    $error = 'Erreur lors de la mise à jour : ' . $ex->getMessage();
+                }
             }
         }
     }
@@ -71,6 +99,19 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <div class="col-md-6">
                     <label class="form-label required">Fonction</label>
                     <input type="text" name="fonction" class="form-control" value="<?= e($p['fonction']) ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label required">Profil d'accès</label>
+                    <select name="role" class="form-select" required <?= $compte ? '' : 'disabled' ?>>
+                        <?php foreach (personnel_profil_options() as $r => $l): ?>
+                            <option value="<?= $r ?>" <?= $roleActuel === $r ? 'selected' : '' ?>><?= e($l) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if (!$compte): ?>
+                        <div class="form-text text-warning">Aucun compte de connexion n'est lié à ce membre.</div>
+                    <?php else: ?>
+                        <div class="form-text">Compte : <?= e($compte['email']) ?></div>
+                    <?php endif; ?>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Téléphone</label>

@@ -63,10 +63,9 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="col-md-3">
                 <select name="role" class="form-select">
                     <option value="">Tous les rôles</option>
-                    <option value="admin" <?= $role==='admin'?'selected':'' ?>>Admin</option>
-                    <option value="eleve" <?= $role==='eleve'?'selected':'' ?>>Élève</option>
-                    <option value="prof" <?= $role==='prof'?'selected':'' ?>>Professeur</option>
-                    <option value="personnel" <?= $role==='personnel'?'selected':'' ?>>Personnel</option>
+                    <?php foreach (roles_selectable() as $r=>$l): ?>
+                        <option value="<?= $r ?>" <?= $role===$r?'selected':'' ?>><?= e($l) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3">
@@ -114,7 +113,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                             <td><a href="mailto:<?= e($u['email']) ?>"><?= e($u['email']) ?></a></td>
                             <td>
                                 <span class="badge badge-role <?= 'badge-role-' . $u['role'] ?>">
-                                    <?= ucfirst($u['role']) ?>
+                                    <?= e(role_labels_court()[$u['role']] ?? ucfirst($u['role'])) ?>
                                 </span>
                             </td>
                             <td>

@@ -6,4 +6,4 @@
     </div><!-- /.content-area -->
 </div><!-- /.main-content -->
 
-<script src="<?= BASE_URL ?>assets/js/app.js"></script>
+<script src="<?= BASE_URL ?>assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"></script>

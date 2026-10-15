@@ -8,13 +8,7 @@ require_once __DIR__ . '/includes/auth.php';
 // Si déjà connecté, rediriger vers le bon espace
 if (is_logged_in()) {
     $role = current_role();
-    $redirects = [
-        'admin' => 'admin/index.php',
-        'eleve' => 'client/eleve/index.php',
-        'prof'  => 'client/prof/index.php',
-        'personnel' => 'client/personnel/index.php',
-    ];
-    header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+    header('Location: ' . BASE_URL . role_home((string)$role));
     exit;
 }
 ?>
@@ -71,13 +65,7 @@ if (is_logged_in()) {
                     } elseif ($result[0]) {
                         set_flash('success', 'Bienvenue !');
                         $role = current_role();
-                        $redirects = [
-                            'admin' => 'admin/index.php',
-                            'eleve' => 'client/eleve/index.php',
-                            'prof'  => 'client/prof/index.php',
-                            'personnel' => 'client/personnel/index.php',
-                        ];
-                        header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+                        header('Location: ' . BASE_URL . role_home((string)$role));
                         exit;
                     } else {
                         $error = $result[1];

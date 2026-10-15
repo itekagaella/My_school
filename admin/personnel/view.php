@@ -5,7 +5,7 @@ require_permission('personnel.view');
 
 $id = (int)get('id', 0);
 $p = prepareQuery(
-    "SELECT p.*, u.email AS email_compte
+    "SELECT p.*, u.email AS email_compte, u.role AS role_compte
      FROM personnel p
      LEFT JOIN utilisateurs u ON u.id = p.user_id
      WHERE p.id = :id",
@@ -53,6 +53,11 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <hr>
                 <div class="text-start small">
                     <p><strong>Fonction :</strong> <?= e($p['fonction']) ?></p>
+                    <p><strong>Profil d'accès :</strong>
+                        <?php if (!empty($p['role_compte'])): ?>
+                            <span class="badge badge-role badge-role-<?= e($p['role_compte']) ?>"><?= e(role_labels_court()[$p['role_compte']] ?? $p['role_compte']) ?></span>
+                        <?php else: ?>-<?php endif; ?>
+                    </p>
                     <p><strong>Téléphone :</strong> <?= e($p['tel'] ?: '-') ?></p>
                     <p><strong>Email :</strong> <?= e($p['email'] ?: '-') ?></p>
                     <p><strong>Compte :</strong> <?= e($p['email_compte'] ?? 'Non lié') ?></p>
@@ -86,6 +91,14 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <tr>
                             <th>Fonction</th>
                             <td><?= e($p['fonction']) ?></td>
+                        </tr>
+                        <tr>
+                            <th>Profil d'accès</th>
+                            <td>
+                                <?php if (!empty($p['role_compte'])): ?>
+                                    <span class="badge badge-role badge-role-<?= e($p['role_compte']) ?>"><?= e(role_labels_court()[$p['role_compte']] ?? $p['role_compte']) ?></span>
+                                <?php else: ?>-<?php endif; ?>
+                            </td>
                         </tr>
                         <tr>
                             <th>Téléphone</th>

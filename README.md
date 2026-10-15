@@ -97,6 +97,44 @@ install.php   Assistant d'installation (à supprimer après usage)
 - Chat interne, notifications
 - Journal d'activités, sauvegardes
 
+## Rôles du personnel
+
+La famille « personnel » regroupe désormais trois profils distincts (sans
+droits d'administration), sélectionnables à la création d'un membre :
+
+- **Surveillant** (`surveillant`) : suivi des élèves, saisie des présences et
+  signalement des incidents.
+- **Gestionnaire financier** (`finance`) : frais scolaires, enregistrement des
+  paiements et édition des reçus, soldes des élèves, rapport financier, exports.
+  Les paiements sont acceptés **uniquement en espèces**.
+- **Responsable discipline** (`discipline`) : incidents, sanctions et
+  convocations des parents, exports.
+
+L'administrateur conserve l'accès complet aux modules Finance et Discipline
+depuis l'espace d'administration. Le rôle générique `personnel` reste accepté
+pour compatibilité (les comptes existants sont migrés vers `surveillant`).
+
+## Mise à jour d'une installation existante
+
+Après avoir récupéré une nouvelle version du code, les migrations de
+`config/migrations/*.sql` doivent être appliquées sur la base existante
+(sinon les nouvelles pages renvoient une erreur, les nouvelles tables
+n'existant pas encore).
+
+En ligne de commande (depuis la racine du projet) :
+
+```bash
+for f in config/migrations/*.sql; do
+  psql -U postgres -d my_school -f "$f"
+done
+```
+
+Les migrations sont **idempotentes** : elles peuvent être relancées sans risque.
+Faire une sauvegarde avant : `pg_dump -U postgres my_school > sauvegarde.sql`.
+
+Une installation neuve via `install.php` applique automatiquement toutes les
+migrations.
+
 ## Sécurité
 
 En production : changez l'administrateur par défaut, supprimez `install.php`, modifiez `ENCRYPTION_KEY` et les identifiants PostgreSQL.

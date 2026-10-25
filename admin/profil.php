@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ??
                 ['n'=>$nom,'p'=>$prenom,'e'=>$email,'id'=>$user['id']]);
             if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
                 $r = upload_file($_FILES['avatar'], 'avatars');
-                if ($r[0]) prepareQuery('UPDATE utilisateurs SET avatar=:a WHERE id=:id', ['a'=>$r[2],'id'=>$user['id']]);
+                if ($r[0]) prepareQuery('UPDATE utilisateurs SET avatar=:a WHERE id=:id', ['a'=>str_replace(ROOT_PATH, '', $r[2]),'id'=>$user['id']]);
             }
             log_activity('user.profile_update', 'Mise à jour du profil');
             set_flash('success', 'Profil mis à jour.');
@@ -108,7 +108,8 @@ if ($is_admin) {
                     <div class="mb-3"><label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>"></div>
                     <div class="mb-3"><label class="form-label">Photo (optionnel)</label>
-                        <input type="file" name="avatar" class="form-control" accept="image/*"></div>
+                        <input type="file" name="avatar" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp">
+                        <div class="form-text">PNG, JPG, GIF ou WebP — max <?= e(format_taille(upload_max_bytes())) ?>.</div></div>
                     <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Enregistrer</button>
                 </form>
             </div>

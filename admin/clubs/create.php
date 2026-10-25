@@ -12,7 +12,11 @@ $d = ['nom_club'=>'', 'description'=>'', 'prof_responsable_id'=>''];
 $profs = prepareQuery("SELECT id, nom, prenom, matricule FROM profs WHERE statut = 'actif' ORDER BY nom, prenom")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+    if (empty($_POST) && empty($_FILES) && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
+        // Le fichier dépasse post_max_size : PHP vide $_POST et $_FILES.
+        $error = 'Le fichier est trop volumineux pour le serveur (max '
+            . format_taille(upload_max_bytes()) . '). Compressez l\'image ou augmentez la limite dans php.ini.';
+    } elseif (!csrf_verify($_POST['csrf_token'] ?? null)) {
         $error = 'Session expirée, veuillez réessayer.';
     } else {
         $d['nom_club'] = clean_input($_POST['nom_club'] ?? '');
@@ -32,7 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!$upload[0]) {
                         $error = $upload[1];
                     } else {
-                        $logo = $upload[2];
+                        // Chemin relatif (ex. assets/uploads/clubs/xxx.png) :
+                        // les vues font file_exists(ROOT_PATH . $logo).
+                        $logo = str_replace(ROOT_PATH, '', $upload[2]);
                     }
                 }
 
@@ -88,7 +94,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Logo (optionnel)</label>
-                    <input type="file" name="logo" class="form-control" accept="image/*">
+                    <input type="file" name="logo" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp">
+                    <div class="form-text">PNG, JPG, GIF ou WebP — max <?= e(format_taille(upload_max_bytes())) ?>.</div>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Description</label>

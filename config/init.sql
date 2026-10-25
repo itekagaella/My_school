@@ -397,7 +397,8 @@ CREATE TABLE IF NOT EXISTS clubs (
     logo              VARCHAR(255),
     date_creation     DATE DEFAULT CURRENT_DATE,
     statut            VARCHAR(20) DEFAULT 'actif' CHECK (statut IN ('actif','inactif')),
-    created_at        TIMESTAMP DEFAULT NOW()
+    created_at        TIMESTAMP DEFAULT NOW(),
+    updated_at        TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS club_membres (

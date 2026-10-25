@@ -290,17 +290,82 @@ function set_param(string $cle, string $valeur): bool
 // ============================================================
 
 /**
+ * Convertit une valeur ini (ex. "2M", "512K", "8M") en octets.
+ */
+function ini_bytes(string $v): int
+{
+    $v = trim($v);
+    if ($v === '' || $v === '-1' || $v === '0') return PHP_INT_MAX;
+    $n = (int)$v;
+    switch (strtolower(substr($v, -1))) {
+        case 'g': return $n * 1024 * 1024 * 1024;
+        case 'm': return $n * 1024 * 1024;
+        case 'k': return $n * 1024;
+        default:  return $n;
+    }
+}
+
+/**
+ * Taille maximale réellement acceptée pour un téléversement (octets).
+ * MAX_FILE_SIZE ne suffit pas : PHP impose aussi upload_max_filesize et
+ * post_max_size, souvent plus bas. On prend donc la plus petite limite.
+ */
+function upload_max_bytes(): int
+{
+    $limits = [(int)MAX_FILE_SIZE];
+    foreach (['upload_max_filesize', 'post_max_size'] as $key) {
+        $v = ini_get($key);
+        if ($v !== false && $v !== '') $limits[] = ini_bytes($v);
+    }
+    return min($limits);
+}
+
+/**
+ * Formate une taille en octets de façon lisible (Ko / Mo).
+ */
+function format_taille(int $octets): string
+{
+    if ($octets >= 1024 * 1024) {
+        $v = $octets / (1024 * 1024);
+        return rtrim(rtrim(number_format($v, 1, ',', ''), '0'), ',') . ' Mo';
+    }
+    if ($octets >= 1024) {
+        return round($octets / 1024) . ' Ko';
+    }
+    return $octets . ' o';
+}
+
+/**
  * Téléverse un fichier de manière sécurisée
  * @return array [succes, message, chemin, nom]
  */
 function upload_file(array $file, string $subdir = 'documents'): array
 {
+    // Messages explicites selon le code d'erreur renvoyé par PHP.
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        return [false, 'Erreur lors du téléversement du fichier.', null, null];
+        switch ($file['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                return [false, 'Fichier trop volumineux : le serveur limite les téléversements à '
+                    . format_taille(upload_max_bytes())
+                    . '. Compressez l\'image ou augmentez upload_max_filesize dans php.ini.', null, null];
+            case UPLOAD_ERR_PARTIAL:
+                return [false, 'Le téléversement a été interrompu. Veuillez réessayer.', null, null];
+            case UPLOAD_ERR_NO_FILE:
+                return [false, 'Aucun fichier sélectionné.', null, null];
+            case UPLOAD_ERR_NO_TMP_DIR:
+            case UPLOAD_ERR_CANT_WRITE:
+                return [false, 'Le serveur ne peut pas écrire le fichier (dossier temporaire ou permissions).', null, null];
+            case UPLOAD_ERR_EXTENSION:
+                return [false, 'Téléversement bloqué par une extension PHP.', null, null];
+            default:
+                return [false, 'Erreur lors du téléversement du fichier (code ' . $file['error'] . ').', null, null];
+        }
     }
 
-    if ($file['size'] > MAX_FILE_SIZE) {
-        return [false, 'Le fichier dépasse la taille maximale autorisée (' . (MAX_FILE_SIZE / 1024 / 1024) . ' Mo).', null, null];
+    $maxUpload = upload_max_bytes();
+    if ($file['size'] > $maxUpload) {
+        return [false, 'Fichier trop volumineux (max ' . format_taille($maxUpload) . ').', null, null];
     }
 
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -316,7 +381,7 @@ function upload_file(array $file, string $subdir = 'documents'): array
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'image/jpeg', 'image/png', 'image/gif',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'text/plain',
     ];
     if (!in_array($mime, $allowedMimes)) {

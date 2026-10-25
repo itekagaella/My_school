@@ -23,7 +23,7 @@ Système de Gestion Scolaire — PHP 8.5 + PostgreSQL
 ### Option 2 : XAMPP
 1. Installer [XAMPP](https://www.apachefriends.org/fr/index.html) et [PostgreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
 2. Placer ce dossier dans `C:\xampp\htdocs\My_School\`
-3. Activer les extensions PostgreSQL dans `php.ini` (`pdo_pgsql`, `pgsql`, `gd`)
+3. Activer les extensions dans `php.ini` (`pdo_pgsql`, `pgsql`, `gd`, `mbstring`) puis redémarrer Apache
 4. Démarrer Apache et PostgreSQL
 5. Ouvrir [http://localhost/My_School/install.php](http://localhost/My_School/install.php)
 6. Terminer l'installation puis supprimer `install.php`
@@ -54,6 +54,31 @@ DEMO_LINKS=false
 Générer une clé unique :
 ```cmd
 php -r "echo bin2hex(random_bytes(32));"
+```
+
+### Téléversements (logos, avatars, documents)
+
+Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,
+WebP et TXT (les images : PNG, JPG, GIF ou WebP — le SVG est refusé pour
+des raisons de sécurité).
+
+La taille maximale effective est la **plus petite** de ces limites :
+
+- `MAX_FILE_SIZE` dans `config/config.php` (10 Mo) ;
+- `upload_max_filesize` de PHP (souvent **2 Mo** par défaut) ;
+- `post_max_size` de PHP (souvent 8 Mo).
+
+Avec PHP-FPM ou Apache, créer un fichier `.user.ini` à la racine du projet :
+
+```ini
+upload_max_filesize = 10M
+post_max_size = 12M
+```
+
+Avec le serveur PHP intégré (`php -S`), ces valeurs viennent de `php.ini` :
+
+```bash
+php -d upload_max_filesize=10M -d post_max_size=12M -S 0.0.0.0:8082
 ```
 
 ### Emails (2FA et mot de passe oublié)

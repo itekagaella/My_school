@@ -41,6 +41,13 @@ function environment_checks(): array
             'detail' => 'Version détectée : ' . PHP_VERSION,
         ],
         [
+            'label'  => 'Extension mbstring',
+            'ok'     => extension_loaded('mbstring'),
+            'detail' => extension_loaded('mbstring')
+                ? 'Extension chargée'
+                : 'Activez mbstring dans votre php.ini puis redémarrez Apache (indispensable sur Windows)',
+        ],
+        [
             'label'  => 'Extension pdo_pgsql',
             'ok'     => extension_loaded('pdo_pgsql'),
             'detail' => extension_loaded('pdo_pgsql')

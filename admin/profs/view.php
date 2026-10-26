@@ -22,7 +22,7 @@ $page_title = 'Détail professeur';
 $active_menu = 'profs';
 
 $matieres = prepareQuery(
-    "SELECT m.*, c.nom_classe
+    "SELECT m.*, " . classe_label_sql('c') . " AS nom_classe
      FROM matieres m
      LEFT JOIN classes c ON c.id = m.classe_id
      WHERE m.prof_id = :id",
@@ -30,7 +30,7 @@ $matieres = prepareQuery(
 )->fetchAll();
 
 $horaires = prepareQuery(
-    "SELECT h.*, m.nom_matiere, c.nom_classe
+    "SELECT h.*, m.nom_matiere, " . classe_label_sql('c') . " AS nom_classe
      FROM horaires h
      LEFT JOIN matieres m ON m.id = h.matiere_id
      LEFT JOIN classes c ON c.id = h.classe_id

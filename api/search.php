@@ -9,12 +9,12 @@ $result = ['ok' => true, 'eleves' => [], 'profs' => [], 'matieres' => [], 'docum
 if ($q !== '') {
     $like = '%' . $q . '%';
     $result['eleves'] = prepareQuery(
-        "SELECT e.matricule, e.nom, e.prenom, c.nom_classe FROM eleves e LEFT JOIN classes c ON c.id=e.classe_id
+        "SELECT e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe FROM eleves e LEFT JOIN classes c ON c.id=e.classe_id
          WHERE e.nom ILIKE :q OR e.prenom ILIKE :q OR e.matricule ILIKE :q LIMIT 10", ['q'=>$like])->fetchAll();
     $result['profs'] = prepareQuery(
         "SELECT matricule, nom, prenom, specialite FROM profs WHERE nom ILIKE :q OR prenom ILIKE :q OR matricule ILIKE :q LIMIT 10", ['q'=>$like])->fetchAll();
     $result['matieres'] = prepareQuery(
-        "SELECT m.nom_matiere, m.code, c.nom_classe FROM matieres m LEFT JOIN classes c ON c.id=m.classe_id
+        "SELECT m.nom_matiere, m.code, " . classe_label_sql('c') . " AS nom_classe FROM matieres m LEFT JOIN classes c ON c.id=m.classe_id
          WHERE m.nom_matiere ILIKE :q OR m.code ILIKE :q LIMIT 10", ['q'=>$like])->fetchAll();
     $result['documents'] = prepareQuery(
         "SELECT id, nom_fichier, type_fichier FROM documents WHERE nom_fichier ILIKE :q AND statut='actif' LIMIT 10", ['q'=>$like])->fetchAll();

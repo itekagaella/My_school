@@ -29,7 +29,7 @@ if ($classe_id > 0) {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $eleves = prepareQuery(
-    "SELECT e.*, c.nom_classe, c.niveau
+    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe, c.niveau
      FROM eleves e
      LEFT JOIN classes c ON c.id = e.classe_id
      $whereSql
@@ -61,7 +61,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                 <select name="classe_id" class="form-select">
                     <option value="0">Toutes les classes</option>
                     <?php foreach ($classes as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= $classe_id === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['nom_classe']) ?></option>
+                        <option value="<?= $c['id'] ?>" <?= $classe_id === (int)$c['id'] ? 'selected' : '' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

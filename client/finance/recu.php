@@ -8,7 +8,7 @@ require_permission('finance.view');
 
 $id = (int)get('id', 0);
 $p = prepareQuery(
-    "SELECT pa.*, e.nom, e.prenom, e.matricule, c.nom_classe, f.libelle AS frais_libelle,
+    "SELECT pa.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe, f.libelle AS frais_libelle,
             u.prenom AS agent_prenom, u.nom AS agent_nom
      FROM paiements pa
      JOIN eleves e ON e.id = pa.eleve_id

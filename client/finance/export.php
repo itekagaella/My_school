@@ -16,7 +16,7 @@ if ($type === 'eleves') {
     $whereSql = 'WHERE ' . implode(' AND ', $where);
 
     $rows = prepareQuery(
-        "SELECT e.matricule, e.nom, e.prenom, c.nom_classe,
+        "SELECT e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe,
                 COALESCE((SELECT SUM(f.montant) FROM frais_scolaires f
                           WHERE f.actif = TRUE AND f.obligatoire = TRUE
                             AND (f.niveau IS NULL OR f.niveau = c.niveau)), 0) AS attendu,
@@ -48,7 +48,7 @@ if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fin)) { $where[] = 'pa.date_paiement <=
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $rows = prepareQuery(
-    "SELECT pa.recu_numero, pa.date_paiement, e.matricule, e.nom, e.prenom, c.nom_classe,
+    "SELECT pa.recu_numero, pa.date_paiement, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe,
             f.libelle AS frais_libelle, pa.periode, pa.mode_paiement, pa.reference, pa.montant
      FROM paiements pa
      JOIN eleves e ON e.id = pa.eleve_id

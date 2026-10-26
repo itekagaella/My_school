@@ -78,7 +78,7 @@ if (array_key_exists($statutF, $statuts)) { $where[] = 'cv.statut = :st'; $param
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $convocations = prepareQuery(
-    "SELECT cv.*, e.nom, e.prenom, e.matricule, c.nom_classe
+    "SELECT cv.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe
      FROM convocations cv
      JOIN eleves e ON e.id = cv.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id
@@ -88,7 +88,7 @@ $convocations = prepareQuery(
 )->fetchAll();
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      WHERE e.statut = 'actif' ORDER BY e.nom, e.prenom"
 )->fetchAll();

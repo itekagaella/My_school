@@ -10,7 +10,7 @@ $page_title = 'Discipline';
 $active_menu = 'discipline';
 
 $eleve = prepareQuery(
-    'SELECT e.*, c.nom_classe, c.niveau FROM eleves e
+    'SELECT e.*, ' . classe_label_sql('c') . ' AS nom_classe, c.niveau FROM eleves e
      LEFT JOIN classes c ON c.id = e.classe_id
      WHERE e.user_id = :uid',
     ['uid' => $user['id']]

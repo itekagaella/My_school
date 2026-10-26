@@ -60,7 +60,7 @@ $dernieres_notes = prepareQuery(
 $nb_notes = count($dernieres_notes);
 
 $matieres_enseignees = prepareQuery(
-    "SELECT m.*, c.nom_classe FROM matieres m
+    "SELECT m.*, " . classe_label_sql('c') . " AS nom_classe FROM matieres m
     LEFT JOIN classes c ON c.id = m.classe_id
     WHERE m.prof_id=:pid
     ORDER BY m.nom_matiere",
@@ -77,7 +77,7 @@ $jour_fr = $jour_map[$jour_actuel] ?? date('l', strtotime('today'));
 $prochain_cours = null;
 if ($jour_fr) {
     $prochain_cours = prepareQuery(
-        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, c.nom_classe
+        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, " . classe_label_sql('c') . " AS nom_classe
         FROM horaires h
         JOIN matieres m ON m.id = h.matiere_id
         LEFT JOIN classes c ON c.id = h.classe_id

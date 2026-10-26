@@ -28,7 +28,7 @@ if ($classeId > 0) { $where[] = 'e.classe_id = :cl'; $params['cl'] = $classeId; 
 $whereSql = 'WHERE ' . implode(' AND ', $where);
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe,
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe,
             (SELECT COUNT(*) FROM incidents_discipline i WHERE i.eleve_id = e.id) AS nb_incidents,
             (SELECT COUNT(*) FROM sanctions s WHERE s.eleve_id = e.id AND s.statut = 'en_cours') AS nb_sanctions
      FROM eleves e
@@ -38,7 +38,7 @@ $eleves = prepareQuery(
     $params
 )->fetchAll();
 
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe, section FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/sidebar_client.php';
@@ -56,7 +56,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
             <div class="col-md-4">
                 <select name="classe_id" class="form-select">
                     <option value="0">Toutes les classes</option>
-                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3"><button class="btn btn-primary w-100" type="submit"><i class="fa-solid fa-filter me-1"></i>Filtrer</button></div>

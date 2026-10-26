@@ -21,7 +21,7 @@ $show_brouillon = isset($_GET['brouillon']);
 
 if ($show_brouillon) {
     $horaires = prepareQuery(
-        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, c.nom_classe
+        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, " . classe_label_sql('c') . " AS nom_classe
         FROM horaires h
         JOIN matieres m ON m.id = h.matiere_id
         LEFT JOIN classes c ON c.id = h.classe_id
@@ -31,7 +31,7 @@ if ($show_brouillon) {
     )->fetchAll();
 } else {
     $horaires = prepareQuery(
-        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, c.nom_classe
+        "SELECT h.*, m.nom_matiere, m.code AS matiere_code, " . classe_label_sql('c') . " AS nom_classe
         FROM horaires h
         JOIN matieres m ON m.id = h.matiere_id
         LEFT JOIN classes c ON c.id = h.classe_id

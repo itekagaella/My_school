@@ -19,7 +19,7 @@ $page_title = 'Détail du club';
 $active_menu = 'clubs';
 
 $membres = prepareQuery(
-    'SELECT cm.*, e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule, e.statut, cl.nom_classe
+    'SELECT cm.*, e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule, e.statut, ' . classe_label_sql('cl') . ' AS nom_classe
      FROM club_membres cm
      JOIN eleves e ON e.id = cm.eleve_id
      LEFT JOIN classes cl ON cl.id = e.classe_id

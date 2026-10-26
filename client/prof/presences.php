@@ -19,7 +19,7 @@ if (!$prof) {
 $prof_id = $prof['id'];
 
 $matieres = prepareQuery(
-    "SELECT m.*, c.nom_classe FROM matieres m
+    "SELECT m.*, " . classe_label_sql('c') . " AS nom_classe FROM matieres m
     LEFT JOIN classes c ON c.id = m.classe_id
     WHERE m.prof_id=:pid
     ORDER BY m.nom_matiere",
@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 if ($selected_matiere) {
     $matiere_info = prepareQuery(
-        "SELECT m.*, c.nom_classe FROM matieres m
+        "SELECT m.*, " . classe_label_sql('c') . " AS nom_classe FROM matieres m
         LEFT JOIN classes c ON c.id = m.classe_id
         WHERE m.id=:mid AND m.prof_id=:pid",
         ['mid'=>$selected_matiere, 'pid'=>$prof_id]

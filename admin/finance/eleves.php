@@ -22,7 +22,7 @@ if ($classeId > 0) { $where[] = 'e.classe_id = :cl'; $params['cl'] = $classeId; 
 $whereSql = 'WHERE ' . implode(' AND ', $where);
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe, c.niveau,
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe, c.niveau,
             COALESCE((SELECT SUM(f.montant) FROM frais_scolaires f
                       WHERE f.actif = TRUE AND f.obligatoire = TRUE
                         AND (f.niveau IS NULL OR f.niveau = c.niveau)), 0) AS attendu,
@@ -34,7 +34,7 @@ $eleves = prepareQuery(
     $params
 )->fetchAll();
 
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe, section FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 $totalAttendu = 0.0; $totalPaye = 0.0;
 foreach ($eleves as $el) { $totalAttendu += (float)$el['attendu']; $totalPaye += (float)$el['paye']; }
@@ -65,7 +65,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="col-md-4">
                 <select name="classe_id" class="form-select">
                     <option value="0">Toutes les classes</option>
-                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId===$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId===$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-3"><button class="btn btn-primary w-100" type="submit"><i class="fa-solid fa-filter me-1"></i>Filtrer</button></div>

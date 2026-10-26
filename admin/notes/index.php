@@ -29,7 +29,7 @@ if ($matiere_id > 0) {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $notes = prepareQuery(
-    "SELECT n.*, e.nom, e.prenom, e.matricule, m.nom_matiere, c.nom_classe, p.nom AS prof_nom, p.prenom AS prof_prenom
+    "SELECT n.*, e.nom, e.prenom, e.matricule, m.nom_matiere, " . classe_label_sql('c') . " AS nom_classe, p.nom AS prof_nom, p.prenom AS prof_prenom
      FROM notes n
      JOIN eleves e ON e.id = n.eleve_id
      JOIN matieres m ON m.id = n.matiere_id
@@ -52,7 +52,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="col-md-4">
                 <select name="classe_id" class="form-select">
                     <option value="0">Toutes les classes</option>
-                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-4">

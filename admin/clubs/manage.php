@@ -53,7 +53,7 @@ $page_title = 'Gestion des membres';
 $active_menu = 'clubs';
 
 $membres = prepareQuery(
-    'SELECT cm.id AS membre_id, cm.date_inscription, e.id AS eleve_id, e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule, cl.nom_classe
+    'SELECT cm.id AS membre_id, cm.date_inscription, e.id AS eleve_id, e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule, ' . classe_label_sql('cl') . ' AS nom_classe
      FROM club_membres cm
      JOIN eleves e ON e.id = cm.eleve_id
      LEFT JOIN classes cl ON cl.id = e.classe_id
@@ -75,7 +75,7 @@ if (!empty($membreIds)) {
 }
 
 $eleves_disponibles = prepareQuery(
-    "SELECT e.id, e.nom, e.prenom, e.matricule, cl.nom_classe
+    "SELECT e.id, e.nom, e.prenom, e.matricule, " . classe_label_sql('cl') . " AS nom_classe
      FROM eleves e LEFT JOIN classes cl ON cl.id = e.classe_id
      WHERE $where ORDER BY e.nom, e.prenom",
     $params

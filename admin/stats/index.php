@@ -11,9 +11,9 @@ $active_menu = 'rapports';
 
 // Effectifs par classe
 $effectifs_classes = prepareQuery(
-    "SELECT c.nom_classe, COUNT(e.id) AS nb
+    "SELECT " . classe_label_sql('c') . " AS nom_classe, COUNT(e.id) AS nb
      FROM classes c LEFT JOIN eleves e ON e.classe_id=c.id
-     GROUP BY c.id, c.nom_classe ORDER BY " . classes_order_sql('c.nom_classe'))->fetchAll();
+     GROUP BY c.id ORDER BY " . classes_order_sql('c.nom_classe'))->fetchAll();
 
 // Répartition par sexe
 $repartition_sexe = prepareQuery(
@@ -25,13 +25,13 @@ $repartition_profs = prepareQuery(
 
 // Moyenne générale par classe
 $moyennes_classes = [];
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe, section FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 foreach ($classes as $cl) {
     $moy = prepareQuery(
         "SELECT COALESCE(AVG(n.note),0) AS moy
          FROM notes n JOIN eleves e ON e.id=n.eleve_id
          WHERE e.classe_id=:id", ['id'=>$cl['id']])->fetch()['moy'] ?? 0;
-    $moyennes_classes[] = ['nom_classe'=>$cl['nom_classe'], 'moyenne'=>round($moy, 2)];
+    $moyennes_classes[] = ['nom_classe'=>classe_label($cl['nom_classe'], $cl['section']), 'moyenne'=>round($moy, 2)];
 }
 
 // Notes mensuelles / types d'évaluation

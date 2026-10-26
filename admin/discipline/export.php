@@ -13,7 +13,7 @@ $statutsSanction = statuts_sanction();
 
 if ($type === 'sanctions') {
     $rows = prepareQuery(
-        "SELECT e.matricule, e.nom, e.prenom, c.nom_classe, s.type_sanction, s.description,
+        "SELECT e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe, s.type_sanction, s.description,
                 s.date_debut, s.date_fin, s.duree_jours, s.statut, u.prenom AS pr_prenom, u.nom AS pr_nom
          FROM sanctions s
          JOIN eleves e ON e.id = s.eleve_id
@@ -37,7 +37,7 @@ if ($type === 'sanctions') {
 
 // Par défaut : incidents
 $rows = prepareQuery(
-    "SELECT i.date_incident, e.matricule, e.nom, e.prenom, c.nom_classe, i.type_incident,
+    "SELECT i.date_incident, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe, i.type_incident,
             i.gravite, i.description, i.lieu, i.statut
      FROM incidents_discipline i
      JOIN eleves e ON e.id = i.eleve_id

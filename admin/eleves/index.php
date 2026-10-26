@@ -32,7 +32,7 @@ if ($sexe !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $eleves = prepareQuery(
-    "SELECT e.*, c.nom_classe
+    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      $whereSql ORDER BY e.nom, e.prenom"
 , $params)->fetchAll();
@@ -67,7 +67,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <select name="classe" class="form-select">
                     <option value="0">Toutes les classes</option>
                     <?php foreach ($classes as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= $classe===$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option>
+                        <option value="<?= $c['id'] ?>" <?= $classe===$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>

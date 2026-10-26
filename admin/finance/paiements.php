@@ -90,7 +90,7 @@ if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fin)) { $where[] = 'pa.date_paiement <=
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $paiements = prepareQuery(
-    "SELECT pa.*, e.nom, e.prenom, e.matricule, c.nom_classe, f.libelle AS frais_libelle,
+    "SELECT pa.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe, f.libelle AS frais_libelle,
             u.prenom AS agent_prenom, u.nom AS agent_nom
      FROM paiements pa
      JOIN eleves e ON e.id = pa.eleve_id
@@ -104,7 +104,7 @@ $paiements = prepareQuery(
 $totalFiltre = array_sum(array_column($paiements, 'montant'));
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      WHERE e.statut = 'actif' ORDER BY e.nom, e.prenom"
 )->fetchAll();

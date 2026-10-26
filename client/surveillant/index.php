@@ -37,7 +37,7 @@ $derniersIncidents = prepareQuery(
 )->fetchAll();
 
 $absentsAujourdhui = prepareQuery(
-    "SELECT e.nom, e.prenom, e.matricule, c.nom_classe, p.statut, p.motif
+    "SELECT e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe, p.statut, p.motif
      FROM presences p JOIN eleves e ON e.id = p.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id
      WHERE p.date_presence = :d AND p.statut IN ('absent','retard')

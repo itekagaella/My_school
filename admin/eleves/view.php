@@ -8,7 +8,7 @@ require_permission('eleves.view');
 
 $id = (int)get('id', 0);
 $el = prepareQuery(
-    "SELECT e.*, c.nom_classe, u.email AS email_compte
+    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe, u.email AS email_compte
      FROM eleves e
      LEFT JOIN classes c ON c.id = e.classe_id
      LEFT JOIN utilisateurs u ON u.id = e.user_id

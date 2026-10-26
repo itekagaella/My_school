@@ -133,7 +133,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         </optgroup>
                         <optgroup label="Par classe">
                             <?php foreach ($classes as $c): ?>
-                                <option value="classe:<?= $c['id'] ?>" <?= in_array('classe:'.$c['id'], $selectedDest)?'selected':'' ?>><?= e($c['nom_classe']) ?></option>
+                                <option value="classe:<?= $c['id'] ?>" <?= in_array('classe:'.$c['id'], $selectedDest)?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option>
                             <?php endforeach; ?>
                         </optgroup>
                     </select>

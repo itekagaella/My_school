@@ -27,16 +27,16 @@ $activites = prepareQuery(
 
 // Derniers élèves inscrits
 $eleves_recents = prepareQuery(
-    'SELECT e.matricule, e.nom, e.prenom, e.date_naissance, c.nom_classe, e.created_at
+    'SELECT e.matricule, e.nom, e.prenom, e.date_naissance, ' . classe_label_sql('c') . ' AS nom_classe, e.created_at
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      ORDER BY e.created_at DESC LIMIT 5'
 )->fetchAll();
 
 // Répartition des élèves par classe
 $eleves_par_classe = prepareQuery(
-    'SELECT c.nom_classe, COUNT(e.id) AS total
+    'SELECT ' . classe_label_sql('c') . ' AS nom_classe, COUNT(e.id) AS total
      FROM classes c LEFT JOIN eleves e ON e.classe_id = c.id
-     GROUP BY c.nom_classe ORDER BY ' . classes_order_sql('c.nom_classe')
+     GROUP BY c.id ORDER BY ' . classes_order_sql('c.nom_classe')
 )->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';

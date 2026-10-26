@@ -32,7 +32,7 @@ $resume = prepareQuery(
 )->fetchAll();
 
 $presences = prepareQuery(
-    "SELECT p.*, e.nom, e.prenom, e.matricule, c.nom_classe, pv.nom AS prof_nom, pv.prenom AS prof_prenom
+    "SELECT p.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe, pv.nom AS prof_nom, pv.prenom AS prof_prenom
      FROM presences p
      JOIN eleves e ON e.id = p.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id
@@ -56,7 +56,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <label class="form-label">Classe</label>
         <select name="classe_id" class="form-select">
             <option value="0">Toutes</option>
-            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
         </select>
     </div>
     <div class="col-md-2">

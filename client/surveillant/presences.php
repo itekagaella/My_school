@@ -22,7 +22,7 @@ $date = clean_input(get('date', date('Y-m-d')));
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = date('Y-m-d');
 $classeId = (int)get('classe_id', 0);
 
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe, section FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 
 // Enregistrement d'un appel
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
@@ -91,7 +91,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                 <label class="form-label">Classe</label>
                 <select name="classe_id" class="form-select">
                     <option value="0">— Sélectionner une classe —</option>
-                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                    <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classeId==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2"><button class="btn btn-primary w-100" type="submit"><i class="fa-solid fa-filter me-1"></i>Charger</button></div>

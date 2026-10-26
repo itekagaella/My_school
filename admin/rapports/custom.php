@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ??
 
 $classe_nom = 'Toutes';
 foreach ($classes as $c) {
-    if ((int)$c['id'] === $classe_id) { $classe_nom = $c['nom_classe']; break; }
+    if ((int)$c['id'] === $classe_id) { $classe_nom = classe_label($c['nom_classe'], $c['section'] ?? null); break; }
 }
 
 require_once __DIR__ . '/../../includes/header.php';
@@ -70,7 +70,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <label class="form-label">Classe</label>
                         <select name="classe_id" class="form-select">
                             <option value="0">Toutes</option>
-                            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $classe_id==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-3">

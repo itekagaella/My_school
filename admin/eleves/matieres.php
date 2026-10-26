@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
 $matieres = prepareQuery(
-    "SELECT m.*, c.nom_classe, p.nom AS prof_nom, p.prenom AS prof_prenom
+    "SELECT m.*, " . classe_label_sql('c') . " AS nom_classe, p.nom AS prof_nom, p.prenom AS prof_prenom
      FROM matieres m LEFT JOIN classes c ON c.id = m.classe_id LEFT JOIN profs p ON p.id = m.prof_id
      ORDER BY m.nom_matiere"
 )->fetchAll();
@@ -75,7 +75,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <label class="form-label">Classe</label>
                         <select name="classe_id" class="form-select">
                             <option value="0">-- Toutes / Aucune --</option>
-                            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>"><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                            <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>"><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                         </select>
                     </div>
                     <div class="mb-2">

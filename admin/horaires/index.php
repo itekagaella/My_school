@@ -50,7 +50,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <label class="fw-semibold mb-0">Classe :</label>
         <select name="classe_id" class="form-select" onchange="this.form.submit()" style="width:200px;">
             <?php foreach ($classes as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= $classe_id===$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option>
+                <option value="<?= $c['id'] ?>" <?= $classe_id===$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option>
             <?php endforeach; ?>
         </select>
     </form>

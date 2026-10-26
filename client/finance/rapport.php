@@ -36,11 +36,12 @@ $parFrais = prepareQuery(
 )->fetchAll();
 
 $parClasse = prepareQuery(
-    "SELECT COALESCE(c.nom_classe, 'Sans classe') AS nom_classe, COUNT(*) AS nb, COALESCE(SUM(pa.montant),0) AS total
+    "SELECT CASE WHEN c.id IS NULL THEN 'Sans classe' ELSE " . classe_label_sql('c') . " END AS nom_classe,
+            COUNT(*) AS nb, COALESCE(SUM(pa.montant),0) AS total
      FROM paiements pa
      JOIN eleves e ON e.id = pa.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id
-     $where GROUP BY c.nom_classe ORDER BY total DESC",
+     $where GROUP BY c.id ORDER BY total DESC",
     $params
 )->fetchAll();
 

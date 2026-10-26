@@ -38,7 +38,7 @@ $active_menu = 'archives';
 
 // Liste des élèves archivés
 $archives = prepareQuery(
-    "SELECT e.*, c.nom_classe, a.id AS archive_id, a.date_archive, a.donnees_json
+    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe, a.id AS archive_id, a.date_archive, a.donnees_json
      FROM eleves e
      LEFT JOIN classes c ON c.id = e.classe_id
      LEFT JOIN archives a ON a.table_source = 'eleves' AND a.record_id = e.id

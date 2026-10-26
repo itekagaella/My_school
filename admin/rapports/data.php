@@ -62,7 +62,7 @@ function rapport_dataset(string $type, int $classe_id, string $debut, string $fi
         $types   = ['text', 'text', 'text', 'text', 'date', 'text'];
         $where = $classe_id > 0 ? 'WHERE e.classe_id = :cl' : '';
         $p = $classe_id > 0 ? ['cl' => $classe_id] : [];
-        $sql = 'SELECT e.matricule, e.nom, e.prenom, e.sexe, e.date_naissance, c.nom_classe
+        $sql = 'SELECT e.matricule, e.nom, e.prenom, e.sexe, e.date_naissance, ' . classe_label_sql('c') . ' AS nom_classe
                 FROM eleves e
                 LEFT JOIN classes c ON c.id = e.classe_id
                 ' . $where . '
@@ -88,7 +88,7 @@ function rapport_dataset(string $type, int $classe_id, string $debut, string $fi
         if ($classe_id > 0) { $where[] = 'c.id = :cl'; $p['cl'] = $classe_id; }
         if ($debut && $fin) { $where[] = 'n.date_evaluation BETWEEN :d1 AND :d2'; $p['d1'] = $debut; $p['d2'] = $fin; }
         $ws = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $sql = 'SELECT e.matricule, e.nom, e.prenom, m.nom_matiere, n.note, n.type_evaluation, n.date_evaluation, c.nom_classe
+        $sql = 'SELECT e.matricule, e.nom, e.prenom, m.nom_matiere, n.note, n.type_evaluation, n.date_evaluation, ' . classe_label_sql('c') . ' AS nom_classe
                 FROM notes n
                 JOIN eleves e ON e.id = n.eleve_id
                 JOIN matieres m ON m.id = n.matiere_id
@@ -108,7 +108,7 @@ function rapport_dataset(string $type, int $classe_id, string $debut, string $fi
         if ($classe_id > 0) { $where[] = 'c.id = :cl'; $p['cl'] = $classe_id; }
         if ($debut && $fin) { $where[] = 'p.date_presence BETWEEN :d1 AND :d2'; $p['d1'] = $debut; $p['d2'] = $fin; }
         $ws = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $sql = 'SELECT e.matricule, e.nom, e.prenom, p.date_presence, p.statut, c.nom_classe
+        $sql = 'SELECT e.matricule, e.nom, e.prenom, p.date_presence, p.statut, ' . classe_label_sql('c') . ' AS nom_classe
                 FROM presences p
                 JOIN eleves e ON e.id = p.eleve_id
                 JOIN classes c ON c.id = e.classe_id
@@ -126,7 +126,7 @@ function rapport_dataset(string $type, int $classe_id, string $debut, string $fi
         if ($classe_id > 0) $p['cl'] = $classe_id;
         // Une seule requête agrégée : même pondération que sp_calculer_moyenne
         // (composition x2), sans boucle N+1 par élève.
-        $sql = 'SELECT e.matricule, e.nom, e.prenom, c.nom_classe,
+        $sql = 'SELECT e.matricule, e.nom, e.prenom, ' . classe_label_sql('c') . ' AS nom_classe,
                        COALESCE(moy.moyenne, 0) AS moyenne
                 FROM eleves e
                 LEFT JOIN classes c ON c.id = e.classe_id
@@ -172,7 +172,7 @@ function rapport_custom_colonnes(string $type): array
             'adresse'       => ['Adresse', 'text', 'e.adresse'],
             'parent_tel'    => ['Tél. parent', 'text', 'e.parent_tel'],
             'parent_email'  => ['Email parent', 'text', 'e.parent_email'],
-            'classe'        => ['Classe', 'text', 'c.nom_classe'],
+            'classe'        => ['Classe', 'text', classe_label_sql('c')],
         ];
     }
     if ($type === 'profs') {
@@ -194,7 +194,7 @@ function rapport_custom_colonnes(string $type): array
             'note'      => ['Note', 'num', 'n.note'],
             'type'      => ['Type', 'text', 'n.type_evaluation'],
             'date'      => ['Date', 'date', 'n.date_evaluation'],
-            'classe'    => ['Classe', 'text', 'c.nom_classe'],
+            'classe'    => ['Classe', 'text', classe_label_sql('c')],
         ];
     }
     return [];

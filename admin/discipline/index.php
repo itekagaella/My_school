@@ -23,7 +23,7 @@ $parGravite = prepareQuery(
 )->fetchAll();
 
 $derniers = prepareQuery(
-    "SELECT i.*, e.nom, e.prenom, e.matricule, c.nom_classe
+    "SELECT i.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe
      FROM incidents_discipline i
      JOIN eleves e ON e.id = i.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id

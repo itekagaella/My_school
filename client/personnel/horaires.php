@@ -16,7 +16,7 @@ if (!$pers) {
     exit;
 }
 
-$classes = prepareQuery('SELECT id, nom_classe FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
+$classes = prepareQuery('SELECT id, nom_classe, section FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $filtre_classe = isset($_GET['classe_id']) ? (int)$_GET['classe_id'] : 0;
 
 $params = [];
@@ -29,7 +29,7 @@ if ($filtre_classe > 0) {
 $horaires = prepareQuery(
     "SELECT h.*, m.nom_matiere, m.code AS matiere_code,
             p.nom AS prof_nom, p.prenom AS prof_prenom,
-            c.nom_classe
+            " . classe_label_sql('c') . " AS nom_classe
      FROM horaires h
      JOIN matieres m ON m.id = h.matiere_id
      LEFT JOIN profs p ON p.id = h.prof_id
@@ -51,7 +51,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
         <select name="classe_id" class="form-select flex-grow-1" onchange="this.form.submit()">
             <option value="0">Toutes les classes</option>
             <?php foreach ($classes as $cl): ?>
-                <option value="<?= $cl['id'] ?>" <?= $filtre_classe == $cl['id'] ? 'selected' : '' ?>><?= e($cl['nom_classe']) ?></option>
+                <option value="<?= $cl['id'] ?>" <?= $filtre_classe == $cl['id'] ? 'selected' : '' ?>><?= e(classe_label($cl['nom_classe'], $cl['section'] ?? null)) ?></option>
             <?php endforeach; ?>
         </select>
     </form>

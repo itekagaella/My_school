@@ -14,8 +14,8 @@ if ($user['role'] === 'admin') {
     }
     if ($stat === 'effectifs_classes') {
         $data = prepareQuery(
-            "SELECT c.nom_classe, COUNT(e.id) AS nb FROM classes c LEFT JOIN eleves e ON e.classe_id=c.id
-             GROUP BY c.id, c.nom_classe ORDER BY " . classes_order_sql('c.nom_classe'))->fetchAll();
+            "SELECT " . classe_label_sql('c') . " AS nom_classe, COUNT(e.id) AS nb FROM classes c LEFT JOIN eleves e ON e.classe_id=c.id
+             GROUP BY c.id ORDER BY " . classes_order_sql('c.nom_classe'))->fetchAll();
         echo json_encode(['ok' => true, 'data' => $data]); exit;
     }
 }

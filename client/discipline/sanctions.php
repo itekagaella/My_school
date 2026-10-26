@@ -93,7 +93,7 @@ if (array_key_exists($statutF, $statuts)) { $where[] = 's.statut = :st'; $params
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $sanctions = prepareQuery(
-    "SELECT s.*, e.nom, e.prenom, e.matricule, c.nom_classe,
+    "SELECT s.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe,
             u.prenom AS pr_prenom, u.nom AS pr_nom
      FROM sanctions s
      JOIN eleves e ON e.id = s.eleve_id
@@ -105,7 +105,7 @@ $sanctions = prepareQuery(
 )->fetchAll();
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      WHERE e.statut = 'actif' ORDER BY e.nom, e.prenom"
 )->fetchAll();

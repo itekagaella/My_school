@@ -64,7 +64,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <div class="col-md-6">
                     <label class="form-label required">Classe</label>
                     <select name="classe_id" class="form-select" required>
-                        <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $h['classe_id']==$c['id']?'selected':'' ?>><?= e($c['nom_classe']) ?></option><?php endforeach; ?>
+                        <?php foreach ($classes as $c): ?><option value="<?= $c['id'] ?>" <?= $h['classe_id']==$c['id']?'selected':'' ?>><?= e(classe_label($c['nom_classe'], $c['section'] ?? null)) ?></option><?php endforeach; ?>
                     </select>
                 </div>
                 <div class="col-md-6">

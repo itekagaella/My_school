@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $mess = prepareQuery(
-    "SELECT i.*, e.nom, e.prenom, e.matricule, c.nom_classe
+    "SELECT i.*, e.nom, e.prenom, e.matricule, " . classe_label_sql('c') . " AS nom_classe
      FROM incidents_discipline i
      JOIN eleves e ON e.id = i.eleve_id
      LEFT JOIN classes c ON c.id = e.classe_id
@@ -70,7 +70,7 @@ $mess = prepareQuery(
 )->fetchAll();
 
 $eleves = prepareQuery(
-    "SELECT e.id, e.matricule, e.nom, e.prenom, c.nom_classe
+    "SELECT e.id, e.matricule, e.nom, e.prenom, " . classe_label_sql('c') . " AS nom_classe
      FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
      WHERE e.statut = 'actif' ORDER BY e.nom, e.prenom"
 )->fetchAll();

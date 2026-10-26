@@ -31,11 +31,22 @@ if ($classe_id > 0) {
 $jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 $heures = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 
+// Ajouter les heures personnalisées choisies par l'admin (ex. 08:30, 10:15)
+// pour qu'elles apparaissent aussi dans la grille de l'emploi du temps.
+foreach ($horaires as $h) {
+    $debut = substr((string)$h['heure_debut'], 0, 5);
+    if ($debut !== '' && !in_array($debut, $heures, true)) {
+        $heures[] = $debut;
+    }
+}
+sort($heures, SORT_STRING);
+
 // Structure emploi du temps [jour][heure]
 $emploidu = [];
 foreach ($jours as $j) foreach ($heures as $h) $emploidu[$j][$h] = [];
 foreach ($horaires as $h) {
-    $empStart = substr($h['heure_debut'], 0, 5);
+    $empStart = substr((string)$h['heure_debut'], 0, 5);
+    if ($empStart === '') continue;
     // Relier à la première heure du créneau
     $emploidu[$h['jour']][$empStart][] = $h;
 }
@@ -78,7 +89,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                     <span class="matiere"><?= e($cr['nom_matiere']) ?></span>
                                     <span class="prof"><?= e($cr['prof_prenom'] ?? '') ?> <?= e($cr['prof_nom'] ?? '') ?></span>
                                     <span class="salle"><i class="fa-solid fa-location-dot"></i> <?= e($cr['salle'] ?? '') ?></span>
-                                    <span class="salle"><?= $cr['heure_debut'] ?>-<?= $cr['heure_fin'] ?></span>
+                                    <span class="salle"><?= e(substr($cr['heure_debut'],0,5)) ?>-<?= e(substr($cr['heure_fin'],0,5)) ?></span>
                                     <a href="edit.php?id=<?= $cr['id'] ?>" class="small text-primary"><i class="fa-solid fa-pen"></i></a>
                                 </div>
                             <?php endforeach; endif; ?>
@@ -106,7 +117,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                     <?php else: foreach ($horaires as $h): ?>
                         <tr>
                             <td><?= e($h['jour']) ?></td>
-                            <td class="small"><?= $h['heure_debut'] ?> - <?= $h['heure_fin'] ?></td>
+                            <td class="small"><?= e(substr($h['heure_debut'],0,5)) ?> - <?= e(substr($h['heure_fin'],0,5)) ?></td>
                             <td><strong><?= e($h['nom_matiere']) ?></strong> <span class="badge bg-light text-dark"><?= e($h['code']) ?></span></td>
                             <td class="small"><?= e($h['prof_prenom'] ?? '') ?> <?= e($h['prof_nom'] ?? '') ?></td>
                             <td class="small"><?= e($h['salle'] ?? '') ?></td>

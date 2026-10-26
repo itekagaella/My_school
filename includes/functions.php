@@ -336,6 +336,83 @@ function format_taille(int $octets): string
 }
 
 /**
+ * Détecte le type MIME réel d'un fichier téléversé.
+ *
+ * Ne dépend pas obligatoirement de l'extension `fileinfo` (souvent absente
+ * sous Windows, ce qui provoquait « Call to undefined function
+ * mime_content_type() »). Repli : getimagesize() pour les images, signature
+ * « %PDF- » pour les PDF, puis type annoncé par le navigateur et enfin
+ * correspondance avec l'extension.
+ */
+function detect_mime_type(string $path, string $nomFichier = '', string $typeClient = ''): string
+{
+    if (function_exists('finfo_open')) {
+        $finfo = @finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo !== false) {
+            $mime = @finfo_file($finfo, $path);
+            if (function_exists('finfo_close')) {
+                @finfo_close($finfo);
+            }
+            if (is_string($mime) && $mime !== '') {
+                return strtolower($mime);
+            }
+        }
+    }
+
+    if (function_exists('mime_content_type')) {
+        $mime = @mime_content_type($path);
+        if (is_string($mime) && $mime !== '') {
+            return strtolower($mime);
+        }
+    }
+
+    $nom = $nomFichier !== '' ? $nomFichier : $path;
+    $ext = strtolower(pathinfo($nom, PATHINFO_EXTENSION));
+
+    // Images : getimagesize() fait partie du cœur de PHP (GD n'est pas requis).
+    if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true) && function_exists('getimagesize')) {
+        $info = @getimagesize($path);
+        if (is_array($info) && !empty($info['mime'])) {
+            return strtolower($info['mime']);
+        }
+    }
+
+    // PDF : signature « %PDF- » en début de fichier.
+    if ($ext === 'pdf') {
+        $fh = @fopen($path, 'rb');
+        if ($fh !== false) {
+            $sig = (string)fread($fh, 5);
+            fclose($fh);
+            if ($sig === '%PDF-') {
+                return 'application/pdf';
+            }
+        }
+    }
+
+    if ($typeClient !== '' && $typeClient !== 'application/octet-stream') {
+        return strtolower($typeClient);
+    }
+
+    $map = [
+        'pdf'  => 'application/pdf',
+        'doc'  => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls'  => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt'  => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'jpg'  => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png'  => 'image/png',
+        'gif'  => 'image/gif',
+        'webp' => 'image/webp',
+        'txt'  => 'text/plain',
+    ];
+
+    return $map[$ext] ?? '';
+}
+
+/**
  * Téléverse un fichier de manière sécurisée
  * @return array [succes, message, chemin, nom]
  */
@@ -373,8 +450,10 @@ function upload_file(array $file, string $subdir = 'documents'): array
         return [false, 'Type de fichier non autorisé : .' . $ext, null, null];
     }
 
-    // Vérification type MIME réel
-    $mime = mime_content_type($file['tmp_name']);
+    // Vérification type MIME réel (fileinfo si disponible, sinon repli).
+    // Si le type reste indéterminé, on se fie à l'extension déjà validée
+    // ci-dessus : le fichier ne peut donc pas être un script exécutable.
+    $mime = detect_mime_type($file['tmp_name'], $file['name'], (string)($file['type'] ?? ''));
     $allowedMimes = [
         'application/pdf',
         'application/msword',
@@ -384,7 +463,7 @@ function upload_file(array $file, string $subdir = 'documents'): array
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'text/plain',
     ];
-    if (!in_array($mime, $allowedMimes)) {
+    if ($mime !== '' && !in_array($mime, $allowedMimes, true)) {
         return [false, 'Contenu du fichier non valide.', null, null];
     }
 
@@ -788,6 +867,31 @@ function niveau_pour_classe(string $nomClasse): string
 function sections_burundi(): array
 {
     return ['Sciences', 'Lettres', 'Pédagogie', 'Commerciale', 'Économie', 'Techniques'];
+}
+
+/**
+ * Libellé complet d'une classe, section incluse : « 1ère année — Sciences ».
+ * La section est omise lorsqu'elle est vide.
+ */
+function classe_label(?string $nomClasse, ?string $section = null): string
+{
+    $nom = trim((string)$nomClasse);
+    $section = trim((string)$section);
+    if ($nom === '') {
+        return $section !== '' ? $section : '-';
+    }
+    return $section !== '' ? $nom . ' — ' . $section : $nom;
+}
+
+/**
+ * Expression SQL du libellé complet d'une classe (nom + section).
+ * Exemple : SELECT ..., classe_label_sql('c') AS nom_classe FROM classes c
+ * L'alias doit être un identifiant simple (lettres/chiffres/underscore).
+ */
+function classe_label_sql(string $alias = 'c'): string
+{
+    $a = preg_replace('/[^A-Za-z0-9_]/', '', $alias) ?: 'c';
+    return "CONCAT_WS(' — ', NULLIF(\"$a\".nom_classe, ''), NULLIF(\"$a\".section, ''))";
 }
 
 /**

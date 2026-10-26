@@ -62,6 +62,12 @@ Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,
 WebP et TXT (les images : PNG, JPG, GIF ou WebP — le SVG est refusé pour
 des raisons de sécurité).
 
+La vérification du type réel utilise l'extension PHP `fileinfo` si elle est
+active. Si elle ne l'est pas, l'application se rabat automatiquement sur
+`getimagesize()` (images), la signature `%PDF-` (PDF) puis l'extension du
+fichier : le téléversement continue de fonctionner. Activez tout de même
+`fileinfo` dans `php.ini` pour une vérification optimale.
+
 La taille maximale effective est la **plus petite** de ces limites :
 
 - `MAX_FILE_SIZE` dans `config/config.php` (10 Mo) ;

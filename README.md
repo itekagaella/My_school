@@ -187,6 +187,21 @@ done
 Les migrations sont **idempotentes** : elles peuvent être relancées sans risque.
 Faire une sauvegarde avant : `pg_dump -U postgres my_school > sauvegarde.sql`.
 
+### Base distante
+
+`migrate.php` utilise les identifiants PostgreSQL de `.env`. Pour mettre à
+jour une base distante sans redéployer le code, renseignez temporairement
+`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` et `DB_PASSWORD` avec ceux de la
+base distante, puis lancez :
+
+```bash
+php migrate.php
+```
+
+Les données existantes (élèves, notes, paiements, comptes, etc.) sont
+conservées : aucune migration ne recrée la base ni ne supprime de table.
+Vous pouvez ensuite rétablir vos identifiants locaux.
+
 Une installation neuve via `install.php` applique automatiquement toutes les
 migrations.
 

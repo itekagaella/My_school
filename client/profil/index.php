@@ -16,15 +16,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ??
         if ($nom && $prenom && is_valid_email($email)) {
             prepareQuery('UPDATE utilisateurs SET nom=:n, prenom=:p, email=:e, updated_at=NOW() WHERE id=:id',
                 ['n'=>$nom,'p'=>$prenom,'e'=>$email,'id'=>$user['id']]);
-            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                $r = upload_file($_FILES['avatar'], 'avatars');
-                if ($r[0]) prepareQuery('UPDATE utilisateurs SET avatar=:a WHERE id=:id', ['a'=>str_replace(ROOT_PATH, '', $r[2]),'id'=>$user['id']]);
+
+            $erreurPhoto = null;
+            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $r = upload_file($_FILES['avatar'], 'avatars', ALLOWED_IMAGE_EXTENSIONS, ALLOWED_IMAGE_MIMES);
+                if ($r[0]) {
+                    supprimer_photo_profil($user['avatar'] ?? null);
+                    prepareQuery('UPDATE utilisateurs SET avatar=:a WHERE id=:id',
+                        ['a'=>str_replace(ROOT_PATH, '', $r[2]),'id'=>$user['id']]);
+                } else {
+                    $erreurPhoto = $r[1];
+                }
             }
+
             log_activity('user.profile_update', 'Mise à jour du profil');
             set_flash('success', 'Profil mis à jour.');
+            if ($erreurPhoto !== null) {
+                set_flash('error', 'Photo de profil non enregistrée : ' . $erreurPhoto);
+            }
         } else {
             set_flash('error', 'Veuillez renseigner des informations valides.');
         }
+        header('Location: index.php');
+        exit;
+    }
+
+    if ($action === 'avatar_delete') {
+        supprimer_photo_profil($user['avatar'] ?? null);
+        prepareQuery('UPDATE utilisateurs SET avatar=NULL, updated_at=NOW() WHERE id=:id', ['id'=>$user['id']]);
+        log_activity('user.avatar_delete', 'Suppression de la photo de profil');
+        set_flash('success', 'Photo de profil supprimée.');
         header('Location: index.php');
         exit;
     }
@@ -58,12 +79,19 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
     <div class="col-md-4">
         <div class="card">
             <div class="card-body text-center">
-                <?php if (!empty($user['avatar']) && file_exists(ROOT_PATH.$user['avatar'])): ?>
-                    <img src="<?= BASE_URL.e($user['avatar']) ?>" class="rounded-circle mb-3" style="width:120px;height:120px;object-fit:cover;">
-                <?php else: ?>
-                    <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:120px;height:120px;font-size:48px;">
-                        <?= e(strtoupper(mb_substr($user['prenom'],0,1) . mb_substr($user['nom'],0,1))) ?>
-                    </div>
+                <?php $avatarUrl = photo_profil_url($user['avatar'] ?? null); ?>
+                <img id="avatarPreview" src="<?= $avatarUrl ? e($avatarUrl) : '' ?>" alt="Photo de profil"
+                     class="rounded-circle mb-3" style="width:120px;height:120px;object-fit:cover;<?= $avatarUrl ? '' : 'display:none;' ?>">
+                <div id="avatarInitials" class="rounded-circle bg-primary text-white mb-3"
+                     style="width:120px;height:120px;font-size:48px;<?= $avatarUrl ? 'display:none;' : 'display:inline-flex;align-items:center;justify-content:center;' ?>">
+                    <?= e(strtoupper(mb_substr($user['prenom'],0,1) . mb_substr($user['nom'],0,1))) ?>
+                </div>
+                <?php if ($avatarUrl): ?>
+                    <form method="post" action="" class="mb-2" onsubmit="return confirm('Supprimer votre photo de profil ?')">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="avatar_delete">
+                        <button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Supprimer la photo</button>
+                    </form>
                 <?php endif; ?>
                 <h5><?= e($user['prenom'].' '.$user['nom']) ?></h5>
                 <span class="badge bg-primary"><?= e(strtoupper($user['role'])) ?></span>
@@ -102,7 +130,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                     </div>
                     <div class="mb-3"><label class="form-label">Email</label>
                         <input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>"></div>
-                    <div class="mb-3"><label class="form-label">Photo (optionnel)</label>
+                    <div class="mb-3"><label class="form-label">Photo de profil (optionnel)</label>
                         <input type="file" name="avatar" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp">
                         <div class="form-text">PNG, JPG, GIF ou WebP — max <?= e(format_taille(upload_max_bytes())) ?>.</div></div>
                     <button class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Enregistrer</button>

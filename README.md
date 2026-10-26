@@ -60,7 +60,13 @@ php -r "echo bin2hex(random_bytes(32));"
 
 Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,
 WebP et TXT (les images : PNG, JPG, GIF ou WebP — le SVG est refusé pour
-des raisons de sécurité).
+des raisons de sécurité). Les logos de club et photos de profil
+n'acceptent que des images (JPEG, PNG, GIF, WebP).
+
+Chaque utilisateur peut définir sa **photo de profil** depuis « Mon profil »
+(aperçu immédiat, remplacement et suppression possibles). Elle apparaît dans
+la barre latérale, le chat, les listes d'utilisateurs, d'élèves, de
+professeurs, de personnel, les commentaires et les partages de documents.
 
 La vérification du type réel utilise l'extension PHP `fileinfo` si elle est
 active. Si elle ne l'est pas, l'application se rabat automatiquement sur

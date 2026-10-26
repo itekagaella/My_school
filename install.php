@@ -515,7 +515,11 @@ foreach ($checks as $c) {
 
                     <div class="mb-3">
                         <label class="form-label">Année scolaire</label>
-                        <input type="text" name="annee_scolaire" class="form-control" value="2025-2026">
+                        <select name="annee_scolaire" class="form-select">
+                            <?php $cur = '2025-2026'; for ($y=date('Y')-3;$y<=date('Y')+2;$y++): $val=$y.'-'.($y+1); ?>
+                                <option value="<?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?>" <?= $val===$cur?'selected':'' ?>><?= htmlspecialchars($val, ENT_QUOTES, 'UTF-8') ?></option>
+                            <?php endfor; ?>
+                        </select>
                     </div>
 
                     <div class="mb-3">

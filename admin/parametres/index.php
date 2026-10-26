@@ -50,6 +50,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                     <option value="true" <?= get_param($cle,'false')==='true'?'selected':'' ?>>Activée</option>
                                     <option value="false" <?= get_param($cle,'false')==='false'?'selected':'' ?>>Désactivée</option>
                                 </select>
+                            <?php elseif ($cle === 'annee_scolaire'): ?>
+                                <?= select_annee_scolaire('annee_scolaire', get_param($cle,''), ['class' => 'form-select']) ?>
                             <?php else: ?>
                                 <input type="text" name="<?= e($cle) ?>" class="form-control" value="<?= e(get_param($cle,'')) ?>">
                             <?php endif; ?>

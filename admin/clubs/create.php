@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $logo = null;
                 if (!empty($_FILES['logo']['name'])) {
-                    $upload = upload_file($_FILES['logo'], 'clubs');
+                    $upload = upload_file($_FILES['logo'], 'clubs', ALLOWED_IMAGE_EXTENSIONS, ALLOWED_IMAGE_MIMES);
                     if (!$upload[0]) {
                         $error = $upload[1];
                     } else {

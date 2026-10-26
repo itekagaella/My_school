@@ -159,4 +159,25 @@
             tr.style.display = match ? '' : 'none';
         }
     };
+    // ---------- Aperçu de la photo de profil choisie ----------
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input[type="file"][name="avatar"]');
+        inputs.forEach(function(input) {
+            input.addEventListener('change', function() {
+                const fichier = input.files && input.files[0];
+                if (!fichier || !fichier.type || fichier.type.indexOf('image/') !== 0) return;
+
+                const apercu = document.getElementById('avatarPreview');
+                const initiales = document.getElementById('avatarInitials');
+
+                if (apercu) {
+                    apercu.src = URL.createObjectURL(fichier);
+                    apercu.style.display = '';
+                }
+                if (initiales) {
+                    initiales.style.display = 'none';
+                }
+            });
+        });
+    });
 })();

@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $partages = prepareQuery(
-    "SELECT dp.*, u.prenom, u.nom, u.email, u.role
+    "SELECT dp.*, u.prenom, u.nom, u.email, u.role, u.avatar
      FROM document_partages dp
      LEFT JOIN utilisateurs u ON u.id = dp.user_id
      WHERE dp.document_id = :did
@@ -107,7 +107,12 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="user-avatar" style="width:32px;height:32px;font-size:12px;"><?= strtoupper(mb_substr($p['prenom'] ?? 'U', 0, 1) . mb_substr($p['nom'] ?? '', 0, 1)) ?></div>
+                                                <?php $photo = photo_profil_url($p['avatar'] ?? null); ?>
+                                                <?php if ($photo): ?>
+                                                    <img src="<?= e($photo) ?>" class="user-avatar" style="width:32px;height:32px;object-fit:cover;" alt="">
+                                                <?php else: ?>
+                                                    <div class="user-avatar" style="width:32px;height:32px;font-size:12px;"><?= strtoupper(mb_substr($p['prenom'] ?? 'U', 0, 1) . mb_substr($p['nom'] ?? '', 0, 1)) ?></div>
+                                                <?php endif; ?>
                                                 <strong><?= e($p['prenom'] . ' ' . $p['nom']) ?></strong>
                                             </div>
                                         </td>

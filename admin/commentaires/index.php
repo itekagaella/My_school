@@ -22,7 +22,7 @@ if ($doc_filter > 0) {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $commentaires = prepareQuery(
-    "SELECT c.*, d.nom_fichier, u.prenom AS user_prenom, u.nom AS user_nom
+    "SELECT c.*, d.nom_fichier, u.prenom AS user_prenom, u.nom AS user_nom, u.avatar AS user_avatar
      FROM commentaires c
      LEFT JOIN documents d ON d.id = c.document_id
      LEFT JOIN utilisateurs u ON u.id = c.user_id
@@ -90,7 +90,17 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                 <i class="fa-solid fa-file-lines text-primary me-1"></i>
                                 <?= e($c['nom_fichier'] ?? '—') ?>
                             </td>
-                            <td class="small"><?= e(($c['user_prenom'] ?? '') . ' ' . ($c['user_nom'] ?? '')) ?></td>
+                            <td class="small">
+                                <div class="d-flex align-items-center gap-2">
+                                    <?php $photo = photo_profil_url($c['user_avatar'] ?? null); ?>
+                                    <?php if ($photo): ?>
+                                        <img src="<?= e($photo) ?>" class="user-avatar" style="width:28px;height:28px;object-fit:cover;" alt="">
+                                    <?php else: ?>
+                                        <div class="user-avatar" style="width:28px;height:28px;font-size:11px;"><?= strtoupper(mb_substr($c['user_prenom'] ?? '?', 0, 1)) ?></div>
+                                    <?php endif; ?>
+                                    <span><?= e(($c['user_prenom'] ?? '') . ' ' . ($c['user_nom'] ?? '')) ?></span>
+                                </div>
+                            </td>
                             <td>
                                 <?= e(mb_strimwidth($c['contenu'], 0, 80, '...')) ?>
                             </td>

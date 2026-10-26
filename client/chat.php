@@ -112,8 +112,9 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
             ?>
                 <a href="chat.php?avec=<?= $u['id'] ?>"
                    class="list-group-item list-group-item-action <?= $is_active ?> d-flex align-items-center">
-                    <?php if (!empty($u['avatar']) && file_exists(ROOT_PATH.$u['avatar'])): ?>
-                        <img src="<?= BASE_URL.e($u['avatar']) ?>" class="rounded-circle me-2" style="width:36px;height:36px;object-fit:cover;">
+                    <?php $avatarUrl = photo_profil_url($u['avatar'] ?? null); ?>
+                    <?php if ($avatarUrl): ?>
+                        <img src="<?= e($avatarUrl) ?>" class="rounded-circle me-2" style="width:36px;height:36px;object-fit:cover;">
                     <?php else: ?>
                         <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center me-2" style="width:36px;height:36px;font-size:14px;">
                             <?= e(strtoupper(mb_substr($u['prenom'],0,1).mb_substr($u['nom'],0,1))) ?>
@@ -145,8 +146,9 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
                 <a href="chat.php" class="btn btn-light btn-sm me-2 d-md-none" title="Retour aux conversations">
                     <i class="fa-solid fa-arrow-left"></i>
                 </a>
-                <?php if (!empty($interlocuteur['avatar']) && file_exists(ROOT_PATH.$interlocuteur['avatar'])): ?>
-                    <img src="<?= BASE_URL.e($interlocuteur['avatar']) ?>" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
+                <?php $avatarUrl = photo_profil_url($interlocuteur['avatar'] ?? null); ?>
+                <?php if ($avatarUrl): ?>
+                    <img src="<?= e($avatarUrl) ?>" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
                 <?php else: ?>
                     <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;font-size:16px;">
                         <?= e(strtoupper(mb_substr($interlocuteur['prenom'],0,1).mb_substr($interlocuteur['nom'],0,1))) ?>
@@ -213,8 +215,9 @@ require_once __DIR__ . '/../includes/sidebar_client.php';
                 <div class="list-group" id="listUsers" style="max-height:min(300px,50vh);overflow-y:auto;">
                     <?php foreach ($autres_users as $au): ?>
                         <a href="chat.php?avec=<?= $au['id'] ?>" class="list-group-item list-group-item-action d-flex align-items-center">
-                            <?php if (!empty($au['avatar']) && file_exists(ROOT_PATH.$au['avatar'])): ?>
-                                <img src="<?= BASE_URL.e($au['avatar']) ?>" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
+                            <?php $avatarUrl = photo_profil_url($au['avatar'] ?? null); ?>
+                            <?php if ($avatarUrl): ?>
+                                <img src="<?= e($avatarUrl) ?>" class="rounded-circle me-2" style="width:32px;height:32px;object-fit:cover;">
                             <?php else: ?>
                                 <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;font-size:12px;">
                                     <?= e(strtoupper(mb_substr($au['prenom'],0,1).mb_substr($au['nom'],0,1))) ?>

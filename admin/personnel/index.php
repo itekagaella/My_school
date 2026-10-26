@@ -27,7 +27,7 @@ if ($statut !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $personnel = prepareQuery(
-    "SELECT p.*, u.role AS role_compte FROM personnel p
+    "SELECT p.*, u.role AS role_compte, u.avatar FROM personnel p
      LEFT JOIN utilisateurs u ON u.id = p.user_id
      $whereSql ORDER BY p.nom, p.prenom",
     $params
@@ -96,7 +96,12 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                             <td class="small text-nowrap"><?= e($p['matricule']) ?></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="user-avatar" style="width:36px;height:36px;font-size:13px;"><?= strtoupper(mb_substr($p['prenom'], 0, 1)) ?></div>
+                                    <?php $photo = photo_profil_url($p['avatar'] ?? null); ?>
+                                    <?php if ($photo): ?>
+                                        <img src="<?= e($photo) ?>" class="user-avatar" style="width:36px;height:36px;object-fit:cover;" alt="">
+                                    <?php else: ?>
+                                        <div class="user-avatar" style="width:36px;height:36px;font-size:13px;"><?= strtoupper(mb_substr($p['prenom'], 0, 1)) ?></div>
+                                    <?php endif; ?>
                                     <div>
                                         <strong><?= e($p['prenom'] . ' ' . $p['nom']) ?></strong>
                                     </div>

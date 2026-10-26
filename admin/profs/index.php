@@ -27,7 +27,10 @@ if ($statut !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $profs = prepareQuery(
-    "SELECT p.* FROM profs p $whereSql ORDER BY p.nom, p.prenom"
+    "SELECT p.*, COALESCE(NULLIF(u.avatar, ''), NULLIF(p.photo, '')) AS avatar_profil
+     FROM profs p
+     LEFT JOIN utilisateurs u ON u.id = p.user_id
+     $whereSql ORDER BY p.nom, p.prenom"
 , $params)->fetchAll();
 
 $canEdit = has_permission('profs.edit');
@@ -88,8 +91,9 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                             <td class="small text-nowrap"><?= e($p['matricule']) ?></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <?php if ($p['photo'] && file_exists(ROOT_PATH . $p['photo'])): ?>
-                                        <img src="<?= BASE_URL . e($p['photo']) ?>" class="user-avatar" style="width:36px;height:36px;object-fit:cover;" alt="">
+                                    <?php $photo = photo_profil_url($p['avatar_profil'] ?? null); ?>
+                                    <?php if ($photo): ?>
+                                        <img src="<?= e($photo) ?>" class="user-avatar" style="width:36px;height:36px;object-fit:cover;" alt="">
                                     <?php else: ?>
                                         <div class="user-avatar" style="width:36px;height:36px;font-size:13px;"><?= strtoupper(mb_substr($p['prenom'],0,1)) ?></div>
                                     <?php endif; ?>

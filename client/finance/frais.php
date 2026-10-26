@@ -115,7 +115,7 @@ require_once __DIR__ . '/../../includes/sidebar_client.php';
                     </div>
                     <div class="mb-2">
                         <label class="form-label required">Année scolaire</label>
-                        <input type="text" name="annee_scolaire" class="form-control" value="<?= e($edit['annee_scolaire'] ?? $anneeDefaut) ?>" required>
+                        <?= select_annee_scolaire('annee_scolaire', $edit['annee_scolaire'] ?? $anneeDefaut, ['class' => 'form-select', 'required' => true]) ?>
                     </div>
                     <div class="mb-2">
                         <label class="form-label">Description</label>

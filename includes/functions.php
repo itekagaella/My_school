@@ -285,6 +285,54 @@ function set_param(string $cle, string $valeur): bool
     }
 }
 
+/**
+ * Génère une liste déroulante d'années scolaires (précédentes, courante, suivantes)
+ */
+function annees_scolaires_list(int $prev = 3, int $next = 2): array
+{
+    $anneeCourante = get_param('annee_scolaire', date('Y') . '-' . (date('Y') + 1));
+    $start = date('Y');
+    if (preg_match('/^(\d{4})-\d{4}$/', $anneeCourante, $m)) {
+        $start = (int)$m[1];
+    }
+    $list = [];
+    for ($i = $start - $prev; $i <= $start + $next; $i++) {
+        $list[] = $i . '-' . ($i + 1);
+    }
+    // Éviter les doublons tout en préservant l'ordre
+    return array_values(array_unique($list));
+}
+
+/**
+ * Affiche un select HTML des années scolaires
+ */
+function select_annee_scolaire(string $name = 'annee_scolaire', ?string $selected = null, array $attrs = [], int $prev = 3, int $next = 2): string
+{
+    if ($selected === null || $selected === '') {
+        $selected = get_param('annee_scolaire', date('Y') . '-' . (date('Y') + 1));
+    }
+    $options = annees_scolaires_list($prev, $next);
+    if ($selected !== '' && !in_array($selected, $options, true)) {
+        $options[] = $selected;
+        sort($options);
+    }
+    $html = '<select name="' . e($name) . '"';
+    foreach ($attrs as $k => $v) {
+        if ($v === true) {
+            $html .= ' ' . e($k);
+        } elseif ($v !== false && $v !== null) {
+            $html .= ' ' . e($k) . '="' . e((string)$v) . '"';
+        }
+    }
+    $html .= '>';
+    foreach ($options as $opt) {
+        $sel = $opt === $selected ? ' selected' : '';
+        $html .= '<option value="' . e($opt) . '"' . $sel . '>' . e($opt) . '</option>';
+    }
+    $html .= '</select>';
+    return $html;
+}
+
 // ============================================================
 // FONCTIONS DE FICHIERS (UPLOAD)
 // ============================================================
@@ -416,7 +464,7 @@ function detect_mime_type(string $path, string $nomFichier = '', string $typeCli
  * Téléverse un fichier de manière sécurisée
  * @return array [succes, message, chemin, nom]
  */
-function upload_file(array $file, string $subdir = 'documents'): array
+function upload_file(array $file, string $subdir = 'documents', ?array $allowed_extensions = null, ?array $allowed_mimes = null): array
 {
     // Messages explicites selon le code d'erreur renvoyé par PHP.
     if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -446,7 +494,8 @@ function upload_file(array $file, string $subdir = 'documents'): array
     }
 
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($ext, ALLOWED_EXTENSIONS)) {
+    $extensions = $allowed_extensions ?? ALLOWED_EXTENSIONS;
+    if (!in_array($ext, $extensions, true)) {
         return [false, 'Type de fichier non autorisé : .' . $ext, null, null];
     }
 
@@ -463,7 +512,7 @@ function upload_file(array $file, string $subdir = 'documents'): array
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',
         'text/plain',
     ];
-    if ($mime !== '' && !in_array($mime, $allowedMimes, true)) {
+    if ($mime !== '' && !in_array($mime, $allowed_mimes ?? $allowedMimes, true)) {
         return [false, 'Contenu du fichier non valide.', null, null];
     }
 
@@ -482,6 +531,60 @@ function upload_file(array $file, string $subdir = 'documents'): array
     }
 
     return [true, 'Fichier téléversé avec succès.', $path, $file['name']];
+}
+
+/**
+ * URL publique d'une photo de profil, ou null si le fichier est absent.
+ *
+ * Accepte les chemins relatifs (assets/uploads/avatars/...) comme les
+ * anciens chemins absolus, et vérifie que le fichier existe réellement.
+ */
+function photo_profil_url(?string $chemin): ?string
+{
+    if ($chemin === null) {
+        return null;
+    }
+    $chemin = str_replace('\\', '/', trim($chemin));
+    if ($chemin === '') {
+        return null;
+    }
+
+    $racine = str_replace('\\', '/', ROOT_PATH);
+    if (strpos($chemin, $racine) === 0) {
+        $chemin = substr($chemin, strlen($racine));
+    }
+    $chemin = ltrim($chemin, '/');
+
+    if ($chemin === '' || strpos($chemin, '..') !== false) {
+        return null;
+    }
+
+    return is_file(ROOT_PATH . $chemin) ? BASE_URL . $chemin : null;
+}
+
+/**
+ * Supprime le fichier d'une photo de profil (uniquement sous assets/uploads).
+ */
+function supprimer_photo_profil(?string $chemin): void
+{
+    if ($chemin === null || trim($chemin) === '') {
+        return;
+    }
+
+    $chemin = str_replace('\\', '/', trim($chemin));
+    $racine = str_replace('\\', '/', ROOT_PATH);
+    if (strpos($chemin, $racine) === 0) {
+        $chemin = substr($chemin, strlen($racine));
+    }
+
+    $absolu = realpath(ROOT_PATH . ltrim($chemin, '/'));
+    $base   = realpath(UPLOAD_DIR);
+
+    if ($absolu !== false && $base !== false
+        && strpos($absolu, $base . DIRECTORY_SEPARATOR) === 0
+        && is_file($absolu)) {
+        @unlink($absolu);
+    }
 }
 
 /**

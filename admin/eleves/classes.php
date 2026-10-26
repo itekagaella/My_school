@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $niveau = niveau_pour_classe($nom);
             $sectionChoisie = clean_input($_POST['section'] ?? '');
             $section = ($sectionChoisie === $SECTION_AUTRE) ? clean_input($_POST['section_autre'] ?? '') : $sectionChoisie;
-            $annee = clean_input($_POST['annee_scolaire'] ?? date('Y') . '-' . (date('Y') + 1));
+            $annee = clean_input($_POST['annee_scolaire'] ?? get_param('annee_scolaire', date('Y') . '-' . (date('Y') + 1)));
             $capacite = (int)($_POST['capacite'] ?? 50);
 
             if ($nom === '') set_flash('error', 'Sélectionnez une classe.');
@@ -125,9 +125,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                     <div class="row g-2">
                         <div class="col-md-6">
                             <label class="form-label">Année scolaire</label>
-                            <select name="annee_scolaire" class="form-select">
-                                <?php foreach ($annees as $a): ?><option value="<?= e($a) ?>"><?= e($a) ?></option><?php endforeach; ?>
-                            </select>
+                            <?= select_annee_scolaire('annee_scolaire', get_param('annee_scolaire', date('Y').'-'.(date('Y')+1)), ['class' => 'form-select']) ?>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Capacité</label>

@@ -32,8 +32,11 @@ if ($sexe !== '') {
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $eleves = prepareQuery(
-    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe
-     FROM eleves e LEFT JOIN classes c ON c.id = e.classe_id
+    "SELECT e.*, " . classe_label_sql('c') . " AS nom_classe,
+            COALESCE(NULLIF(u.avatar, ''), NULLIF(e.photo, '')) AS avatar_profil
+     FROM eleves e
+     LEFT JOIN classes c ON c.id = e.classe_id
+     LEFT JOIN utilisateurs u ON u.id = e.user_id
      $whereSql ORDER BY e.nom, e.prenom"
 , $params)->fetchAll();
 
@@ -104,8 +107,9 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                             <td class="small text-nowrap"><?= e($el['matricule']) ?></td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <?php if ($el['photo'] && file_exists(ROOT_PATH . $el['photo'])): ?>
-                                        <img src="<?= BASE_URL . e($el['photo']) ?>" class="user-avatar" style="width:36px;height:36px;object-fit:cover;" alt="">
+                                    <?php $photo = photo_profil_url($el['avatar_profil'] ?? null); ?>
+                                    <?php if ($photo): ?>
+                                        <img src="<?= e($photo) ?>" class="user-avatar" style="width:36px;height:36px;object-fit:cover;" alt="">
                                     <?php else: ?>
                                         <div class="user-avatar" style="width:36px;height:36px;font-size:13px;"><?= strtoupper(mb_substr($el['prenom'],0,1)) ?></div>
                                     <?php endif; ?>

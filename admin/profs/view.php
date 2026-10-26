@@ -5,7 +5,8 @@ require_permission('profs.view');
 
 $id = (int)get('id', 0);
 $prof = prepareQuery(
-    "SELECT p.*, u.email AS email_compte
+    "SELECT p.*, u.email AS email_compte,
+            COALESCE(NULLIF(u.avatar, ''), NULLIF(p.photo, '')) AS avatar_profil
      FROM profs p
      LEFT JOIN utilisateurs u ON u.id = p.user_id
      WHERE p.id = :id",
@@ -55,8 +56,9 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     <div class="col-lg-4">
         <div class="card">
             <div class="card-body text-center">
-                <?php if ($prof['photo'] && file_exists(ROOT_PATH . $prof['photo'])): ?>
-                    <img src="<?= BASE_URL . e($prof['photo']) ?>" class="avatar-preview" alt="">
+                <?php $photoProfil = photo_profil_url($prof['avatar_profil'] ?? null); ?>
+                <?php if ($photoProfil): ?>
+                    <img src="<?= e($photoProfil) ?>" class="avatar-preview" style="object-fit:cover;" alt="">
                 <?php else: ?>
                     <div class="avatar-preview d-inline-flex align-items-center justify-content-center" style="font-size:40px;background:#e2e8f0;">
                         <i class="fa-solid fa-chalkboard-user"></i>

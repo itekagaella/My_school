@@ -57,6 +57,9 @@ define('SESSION_TIMEOUT', 1800);
 // Paramètres d'upload
 define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10 Mo
 define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt']);
+// Images autorisées (photos de profil, logos de club)
+define('ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+define('ALLOWED_IMAGE_MIMES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 define('UPLOAD_DIR', ROOT_PATH . 'assets/uploads/');
 
 // Lit une variable d'environnement : getenv() → $_ENV → fichier .env

@@ -8,23 +8,59 @@ require_role(['admin']);
 $page_title = 'Gestion des matières';
 $active_menu = 'eleves';
 
+/**
+ * Génère un code court et unique à partir du nom de la matière.
+ * Le champ n'est plus saisi : il reste utilisé par les horaires et
+ * l'espace professeur, et il est NOT NULL UNIQUE en base.
+ */
+function generer_code_matiere(string $nom): string
+{
+    $translitteration = [
+        'à'=>'a','á'=>'a','â'=>'a','ä'=>'a','ã'=>'a','å'=>'a',
+        'é'=>'e','è'=>'e','ê'=>'e','ë'=>'e',
+        'í'=>'i','ì'=>'i','î'=>'i','ï'=>'i',
+        'ó'=>'o','ò'=>'o','ô'=>'o','ö'=>'o','õ'=>'o',
+        'ú'=>'u','ù'=>'u','û'=>'u','ü'=>'u',
+        'ç'=>'c','ñ'=>'n','ÿ'=>'y','œ'=>'oe','æ'=>'ae',
+    ];
+    $texte = strtr(mb_strtolower($nom, 'UTF-8'), $translitteration);
+    $base  = strtoupper(preg_replace('/[^a-z0-9]/i', '', $texte));
+    $base  = $base !== '' ? substr($base, 0, 6) : 'MAT';
+
+    $existants = [];
+    foreach (prepareQuery('SELECT code FROM matieres')->fetchAll() as $row) {
+        $existants[strtoupper($row['code'])] = true;
+    }
+
+    $code = $base;
+    $suffixe = 1;
+    while (isset($existants[$code])) {
+        $suffixe++;
+        $code = $base . $suffixe; // 6 + 4 chiffres max = 10 caractères
+        if ($suffixe > 9999) {
+            $code = 'M' . substr((string)time(), -6);
+            break;
+        }
+    }
+    return $code;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) set_flash('error', 'Session expirée.');
     else {
         $action = $_POST['action'] ?? '';
         if ($action === 'create') {
             $nom = clean_input($_POST['nom_matiere'] ?? '');
-            $code = strtoupper(clean_input($_POST['code'] ?? ''));
-            $coef = (float)($_POST['coefficient'] ?? 1);
             $classe_id = (int)($_POST['classe_id'] ?? 0);
             $prof_id = (int)($_POST['prof_id'] ?? 0);
-            if (empty($nom) || empty($code)) set_flash('error', 'Nom et code requis.');
+            if (empty($nom)) set_flash('error', 'Le nom de la matière est requis.');
             else {
+                $code = generer_code_matiere($nom);
                 prepareQuery(
-                    'INSERT INTO matieres (nom_matiere, code, coefficient, classe_id, prof_id) VALUES (:n,:c,:k,:cl,:p)',
-                    ['n'=>$nom,'c'=>$code,'k'=>$coef,'cl'=>$classe_id>0?$classe_id:null,'p'=>$prof_id>0?$prof_id:null]
+                    'INSERT INTO matieres (nom_matiere, code, classe_id, prof_id) VALUES (:n,:c,:cl,:p)',
+                    ['n'=>$nom,'c'=>$code,'cl'=>$classe_id>0?$classe_id:null,'p'=>$prof_id>0?$prof_id:null]
                 );
-                log_activity('matieres.create', 'Création de la matière ' . $code);
+                log_activity('matieres.create', 'Création de la matière ' . $nom);
                 set_flash('success', 'Matière créée.');
             }
         } elseif ($action === 'delete') {
@@ -61,16 +97,6 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                     <input type="hidden" name="action" value="create">
                     <div class="mb-2"><label class="form-label required">Nom de la matière</label>
                         <input type="text" name="nom_matiere" class="form-control" required></div>
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label required">Code</label>
-                            <input type="text" name="code" class="form-control" placeholder="Ex: MATH" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Coefficient</label>
-                            <input type="number" name="coefficient" class="form-control" value="1" step="0.5" min="0.5">
-                        </div>
-                    </div>
                     <div class="mb-2 mt-2">
                         <label class="form-label">Classe</label>
                         <select name="classe_id" class="form-select">
@@ -97,15 +123,13 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead class="table-light"><tr><th>Code</th><th>Matière</th><th>Coeff.</th><th>Classe</th><th>Professeur</th><th class="text-end">Actions</th></tr></thead>
+                        <thead class="table-light"><tr><th>Matière</th><th>Classe</th><th>Professeur</th><th class="text-end">Actions</th></tr></thead>
                         <tbody>
                             <?php if (empty($matieres)): ?>
-                                <tr><td colspan="6" class="text-center text-muted py-4">Aucune matière.</td></tr>
+                                <tr><td colspan="4" class="text-center text-muted py-4">Aucune matière.</td></tr>
                             <?php else: foreach ($matieres as $m): ?>
                                 <tr>
-                                    <td><span class="badge bg-primary"><?= e($m['code']) ?></span></td>
                                     <td><strong><?= e($m['nom_matiere']) ?></strong></td>
-                                    <td><?= $m['coefficient'] ?></td>
                                     <td class="small"><?= e($m['nom_classe'] ?? 'Toutes') ?></td>
                                     <td class="small"><?= e($m['prof_prenom'] ?? '') . ' ' . e($m['prof_nom'] ?? '—') ?></td>
                                     <td class="text-end">

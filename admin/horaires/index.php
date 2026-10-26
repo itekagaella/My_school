@@ -29,25 +29,34 @@ if ($classe_id > 0) {
 }
 
 $jours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
-$heures = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00'];
 
-// Ajouter les heures personnalisées choisies par l'admin (ex. 08:30, 10:15)
-// pour qu'elles apparaissent aussi dans la grille de l'emploi du temps.
+// Lignes de la grille : créneaux standard (7 cours + pause de 15 min).
+$lignes = creneaux_horaires();
+$debuts_standard = array_column($lignes, 'debut');
+
+// Conserver les anciens créneaux hors norme pour qu'ils restent visibles.
 foreach ($horaires as $h) {
     $debut = substr((string)$h['heure_debut'], 0, 5);
-    if ($debut !== '' && !in_array($debut, $heures, true)) {
-        $heures[] = $debut;
+    if ($debut === '' || in_array($debut, $debuts_standard, true)) {
+        continue;
     }
+    $lignes[] = [
+        'debut' => $debut,
+        'fin'   => substr((string)$h['heure_fin'], 0, 5),
+        'type'  => 'cours',
+    ];
+    $debuts_standard[] = $debut;
 }
-sort($heures, SORT_STRING);
+usort($lignes, static function ($a, $b) {
+    return strcmp($a['debut'], $b['debut']);
+});
 
-// Structure emploi du temps [jour][heure]
+// Structure emploi du temps [jour][heure de début]
 $emploidu = [];
-foreach ($jours as $j) foreach ($heures as $h) $emploidu[$j][$h] = [];
+foreach ($jours as $j) foreach ($lignes as $l) $emploidu[$j][$l['debut']] = [];
 foreach ($horaires as $h) {
     $empStart = substr((string)$h['heure_debut'], 0, 5);
     if ($empStart === '') continue;
-    // Relier à la première heure du créneau
     $emploidu[$h['jour']][$empStart][] = $h;
 }
 
@@ -79,22 +88,28 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ($heures as $h): ?>
-                <tr>
-                    <td style="text-align:center;font-weight:600;background:#f8fafc;"><?= $h ?></td>
-                    <?php foreach ($jours as $j): ?>
-                        <td style="height:70px;vertical-align:top;padding:2px;">
-                            <?php if (!empty($emploidu[$j][$h])): foreach ($emploidu[$j][$h] as $cr): ?>
-                                <div class="horaire-cell p-1" style="border-left:3px solid <?= $cr['statut']==='publie' ? '#16a34a' : ($cr['statut']==='annule' ? '#dc2626' : '#d97706') ?>;">
-                                    <span class="matiere"><?= e($cr['nom_matiere']) ?></span>
-                                    <span class="prof"><?= e($cr['prof_prenom'] ?? '') ?> <?= e($cr['prof_nom'] ?? '') ?></span>
-                                    <span class="salle"><i class="fa-solid fa-location-dot"></i> <?= e($cr['salle'] ?? '') ?></span>
-                                    <span class="salle"><?= e(substr($cr['heure_debut'],0,5)) ?>-<?= e(substr($cr['heure_fin'],0,5)) ?></span>
-                                    <a href="edit.php?id=<?= $cr['id'] ?>" class="small text-primary"><i class="fa-solid fa-pen"></i></a>
-                                </div>
-                            <?php endforeach; endif; ?>
+                <?php foreach ($lignes as $ligne): $estPause = (($ligne['type'] ?? 'cours') === 'pause'); ?>
+                <tr<?= $estPause ? ' class="table-secondary"' : '' ?>>
+                    <td style="text-align:center;font-weight:600;background:#f8fafc;"><?= e($ligne['debut']) ?></td>
+                    <?php if ($estPause): ?>
+                        <td colspan="<?= count($jours) ?>" class="text-center fw-semibold py-2">
+                            <i class="fa-solid fa-mug-hot me-1"></i>Pause (<?= e(creneau_label($ligne)) ?>)
                         </td>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($jours as $j): ?>
+                            <td style="height:70px;vertical-align:top;padding:2px;">
+                                <?php if (!empty($emploidu[$j][$ligne['debut']])): foreach ($emploidu[$j][$ligne['debut']] as $cr): ?>
+                                    <div class="horaire-cell p-1" style="border-left:3px solid <?= $cr['statut']==='publie' ? '#16a34a' : ($cr['statut']==='annule' ? '#dc2626' : '#d97706') ?>;">
+                                        <span class="matiere"><?= e($cr['nom_matiere']) ?></span>
+                                        <span class="prof"><?= e($cr['prof_prenom'] ?? '') ?> <?= e($cr['prof_nom'] ?? '') ?></span>
+                                        <span class="salle"><i class="fa-solid fa-location-dot"></i> <?= e($cr['salle'] ?? '') ?></span>
+                                        <span class="salle"><?= e(substr($cr['heure_debut'],0,5)) ?>-<?= e(substr($cr['heure_fin'],0,5)) ?></span>
+                                        <a href="edit.php?id=<?= $cr['id'] ?>" class="small text-primary"><i class="fa-solid fa-pen"></i></a>
+                                    </div>
+                                <?php endforeach; endif; ?>
+                            </td>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

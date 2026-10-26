@@ -1080,6 +1080,73 @@ function salle_par_defaut_classe(int $classeId): string
 }
 
 /**
+ * Créneaux horaires standard de l'établissement.
+ *
+ * 7 cours de 45 minutes, de 08:15 à 13:45, avec une pause de 15 minutes
+ * après le 4e cours (11:15 - 11:30).
+ *
+ * Chaque entrée contient : debut, fin, type ('cours' ou 'pause').
+ */
+function creneaux_horaires(): array
+{
+    return [
+        ['debut' => '08:15', 'fin' => '09:00', 'type' => 'cours'],
+        ['debut' => '09:00', 'fin' => '09:45', 'type' => 'cours'],
+        ['debut' => '09:45', 'fin' => '10:30', 'type' => 'cours'],
+        ['debut' => '10:30', 'fin' => '11:15', 'type' => 'cours'],
+        ['debut' => '11:15', 'fin' => '11:30', 'type' => 'pause'],
+        ['debut' => '11:30', 'fin' => '12:15', 'type' => 'cours'],
+        ['debut' => '12:15', 'fin' => '13:00', 'type' => 'cours'],
+        ['debut' => '13:00', 'fin' => '13:45', 'type' => 'cours'],
+    ];
+}
+
+/**
+ * Créneaux de cours uniquement (sans la pause), pour les listes déroulantes.
+ */
+function creneaux_cours(): array
+{
+    return array_values(array_filter(creneaux_horaires(), static function ($c) {
+        return ($c['type'] ?? 'cours') === 'cours';
+    }));
+}
+
+/**
+ * Libellé d'un créneau : « 08:15 - 09:00 ».
+ */
+function creneau_label(array $creneau): string
+{
+    return substr((string)$creneau['debut'], 0, 5) . ' - ' . substr((string)$creneau['fin'], 0, 5);
+}
+
+/**
+ * Retrouve un créneau standard à partir de son début et de sa fin (HH:MM),
+ * ou null si les heures ne correspondent à aucun créneau standard.
+ */
+function creneau_standard(?string $debut, ?string $fin): ?array
+{
+    $debut = substr(trim((string)$debut), 0, 5);
+    $fin   = substr(trim((string)$fin), 0, 5);
+    if ($debut === '' || $fin === '') {
+        return null;
+    }
+    foreach (creneaux_horaires() as $c) {
+        if ($c['debut'] === $debut && $c['fin'] === $fin) {
+            return $c;
+        }
+    }
+    return null;
+}
+
+/**
+ * Valeur d'option pour un créneau (utilisée dans les formulaires).
+ */
+function creneau_valeur(array $creneau): string
+{
+    return $creneau['debut'] . '|' . $creneau['fin'];
+}
+
+/**
  * Tri SQL des classes dans l'ordre pédagogique (classes hors liste en dernier)
  *
  * @param string $col colonne ou alias contenant le nom de classe (littéral du code uniquement)

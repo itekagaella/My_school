@@ -13,9 +13,10 @@ $classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('n
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
 $salles = salles_options();
+$creneaux = creneaux_cours();
 
 $error = '';
-$d = ['classe_id'=>(int)get('classe_id',0),'matiere_id'=>'','prof_id'=>'','jour'=>'Lundi','heure_debut'=>'08:00','heure_fin'=>'09:00','salle'=>''];
+$d = ['classe_id'=>(int)get('classe_id',0),'matiere_id'=>'','prof_id'=>'','jour'=>'Lundi','heure_debut'=>'08:15','heure_fin'=>'09:00','salle'=>''];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) set_flash('error', 'Session expirée.');
@@ -24,8 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $d['matiere_id'] = (int)($_POST['matiere_id'] ?? 0);
         $d['prof_id'] = (int)($_POST['prof_id'] ?? 0);
         $d['jour'] = $_POST['jour'] ?? 'Lundi';
-        $d['heure_debut'] = $_POST['heure_debut'] ?? '';
-        $d['heure_fin'] = $_POST['heure_fin'] ?? '';
+        $creneauChoisi = (string)($_POST['creneau'] ?? '');
+        $creneau = null;
+        foreach ($creneaux as $c) {
+            if (creneau_valeur($c) === $creneauChoisi) {
+                $creneau = $c;
+                break;
+            }
+        }
+        $d['heure_debut'] = $creneau['debut'] ?? '';
+        $d['heure_fin'] = $creneau['fin'] ?? '';
         $d['salle'] = clean_input($_POST['salle'] ?? '');
         if ($d['salle'] === '' && $d['classe_id'] > 0) {
             $d['salle'] = salle_par_defaut_classe($d['classe_id']);
@@ -39,8 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($d['classe_id'] <= 0 || $d['matiere_id'] <= 0) set_flash('error', 'Classe et matière requises.');
-        elseif (empty($d['heure_debut']) || empty($d['heure_fin'])) set_flash('error', 'Heures requises.');
-        elseif ($d['heure_debut'] >= $d['heure_fin']) set_flash('error', 'L\'heure de fin doit être après l\'heure de début.');
+        elseif ($creneau === null) set_flash('error', 'Sélectionnez un créneau horaire.');
         elseif (!$salleValide) set_flash('error', 'Salle invalide : choisissez une salle dans la liste.');
         else {
             $annee = get_param('annee_scolaire', date('Y') . '-' . (date('Y')+1));
@@ -120,12 +128,15 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label required">Heure début</label>
-                    <input type="time" name="heure_debut" class="form-control" value="<?= e($d['heure_debut']) ?>" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label required">Heure fin</label>
-                    <input type="time" name="heure_fin" class="form-control" value="<?= e($d['heure_fin']) ?>" required>
+                    <label class="form-label required">Créneau</label>
+                    <select name="creneau" class="form-select" required>
+                        <option value="">-- Choisir --</option>
+                        <?php foreach ($creneaux as $c): ?>
+                            <option value="<?= e(creneau_valeur($c)) ?>" <?= ($d['heure_debut']===$c['debut'] && $d['heure_fin']===$c['fin']) ? 'selected' : '' ?>>
+                                <?= e(creneau_label($c)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Salle</label>

@@ -21,6 +21,8 @@ $classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('n
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
 $salles = salles_options();
+$creneaux = creneaux_cours();
+$creneauActuel = creneau_standard($h['heure_debut'], $h['heure_fin']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) set_flash('error', 'Session expirée.');
@@ -29,8 +31,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $matiere_id = (int)($_POST['matiere_id'] ?? 0);
         $prof_id = (int)($_POST['prof_id'] ?? 0);
         $jour = $_POST['jour'] ?? 'Lundi';
-        $heure_debut = $_POST['heure_debut'] ?? '';
-        $heure_fin = $_POST['heure_fin'] ?? '';
+        $creneauChoisi = (string)($_POST['creneau'] ?? '');
+        $creneau = null;
+        foreach ($creneaux as $c) {
+            if (creneau_valeur($c) === $creneauChoisi) {
+                $creneau = $c;
+                break;
+            }
+        }
+        if ($creneau !== null) {
+            $heure_debut = $creneau['debut'];
+            $heure_fin   = $creneau['fin'];
+        } elseif ($creneauChoisi === 'existant') {
+            // Ancien créneau hors norme : on le conserve tant que l'admin ne le change pas.
+            $heure_debut = substr((string)$h['heure_debut'], 0, 5);
+            $heure_fin   = substr((string)$h['heure_fin'], 0, 5);
+        } else {
+            $heure_debut = '';
+            $heure_fin   = '';
+        }
         $salle = clean_input($_POST['salle'] ?? '');
         if ($salle === '' && $classe_id > 0) {
             $salle = salle_par_defaut_classe($classe_id);
@@ -44,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($classe_id <= 0 || $matiere_id <= 0) set_flash('error', 'Classe et matière requises.');
-        elseif (empty($heure_debut) || empty($heure_fin)) set_flash('error', 'Heures requises.');
+        elseif ($heure_debut === '' || $heure_fin === '') set_flash('error', 'Sélectionnez un créneau horaire.');
         elseif ($heure_debut >= $heure_fin) set_flash('error', 'Heure de fin invalide.');
         elseif (!$salleValide) set_flash('error', 'Salle invalide : choisissez une salle dans la liste.');
         else {
@@ -100,10 +119,18 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-3"><label class="form-label required">Heure début</label>
-                    <input type="time" name="heure_debut" class="form-control" value="<?= e($h['heure_debut']) ?>" required></div>
-                <div class="col-md-3"><label class="form-label required">Heure fin</label>
-                    <input type="time" name="heure_fin" class="form-control" value="<?= e($h['heure_fin']) ?>" required></div>
+                <div class="col-md-3"><label class="form-label required">Créneau</label>
+                    <select name="creneau" class="form-select" required>
+                        <option value="">-- Choisir --</option>
+                        <?php foreach ($creneaux as $c): ?>
+                            <option value="<?= e(creneau_valeur($c)) ?>" <?= ($creneauActuel !== null && $creneauActuel['debut']===$c['debut'] && $creneauActuel['fin']===$c['fin']) ? 'selected' : '' ?>>
+                                <?= e(creneau_label($c)) ?>
+                            </option>
+                        <?php endforeach; ?>
+                        <?php if ($creneauActuel === null && !empty($h['heure_debut'])): ?>
+                            <option value="existant" selected>Créneau existant : <?= e(substr($h['heure_debut'],0,5)) ?> - <?= e(substr($h['heure_fin'],0,5)) ?></option>
+                        <?php endif; ?>
+                    </select></div>
                 <div class="col-md-3"><label class="form-label">Salle</label>
                     <select name="salle" id="salle" class="form-select">
                         <option value="">-- Aucune --</option>

@@ -64,6 +64,20 @@ définit `default_charset = ISO-8859-1`, ce qui affichait « Ã© » au lieu de
 « é » sur certains serveurs Windows. Si des accents cassés subsistent,
 vérifier que `default_charset = UTF-8` dans le `php.ini` utilisé par PHP.
 
+Si des **valeurs déjà enregistrées** s'affichent « Ã© » (import `psql` sur
+Windows, ancienne connexion en Windows-1252...), ouvrir
+`reparer_accents.php` en tant qu'administrateur : la page affiche un
+diagnostic, détecte les valeurs concernées, montre un aperçu avant → après
+et applique la correction après confirmation. Sauvegarder la base avant,
+et supprimer la page après usage.
+
+Pour un import manuel, forcer l'UTF-8 avant de charger le fichier :
+
+```sql
+SET client_encoding = 'UTF8';
+\i config/init.sql
+```
+
 ### Téléversements (logos, avatars, documents)
 
 Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,

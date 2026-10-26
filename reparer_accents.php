@@ -95,7 +95,8 @@ $colonnes = prepareQuery(
 )->fetchAll();
 
 $action = $_POST['action'] ?? '';
-$rapport = [];
+$rapport = $_SESSION['rapport_accents'] ?? [];
+unset($_SESSION['rapport_accents']);
 $erreur = null;
 
 // ------------------------------------------------------------
@@ -103,54 +104,63 @@ $erreur = null;
 // ------------------------------------------------------------
 if ($action === 'reparer') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-        $erreur = 'Session expirée, veuillez réessayer.';
-    } else {
-        $db = getDB();
-        $db->beginTransaction();
-        try {
-            foreach ($colonnes as $c) {
-                $table = (string)$c['table_name'];
-                $col   = (string)$c['column_name'];
-                $qt = '"' . str_replace('"', '""', $table) . '"';
-                $qc = '"' . str_replace('"', '""', $col) . '"';
+        set_flash('danger', 'Session expirée, veuillez réessayer.');
+        header('Location: ' . BASE_URL . 'reparer_accents.php');
+        exit;
+    }
 
-                $sel = $db->prepare("SELECT ctid::text AS _ctid, $qc AS _val FROM $qt WHERE $qc ~ :motif");
-                $sel->execute([':motif' => $motif]);
-                $lignes = $sel->fetchAll(PDO::FETCH_ASSOC);
+    $db = getDB();
+    $db->beginTransaction();
+    try {
+        foreach ($colonnes as $c) {
+            $table = (string)$c['table_name'];
+            $col   = (string)$c['column_name'];
+            $qt = '"' . str_replace('"', '""', $table) . '"';
+            $qc = '"' . str_replace('"', '""', $col) . '"';
 
-                if (!$lignes) {
+            $sel = $db->prepare("SELECT ctid::text AS _ctid, $qc AS _val FROM $qt WHERE $qc ~ :motif");
+            $sel->execute([':motif' => $motif]);
+            $lignes = $sel->fetchAll(PDO::FETCH_ASSOC);
+
+            if (!$lignes) {
+                continue;
+            }
+
+            $upd = $db->prepare("UPDATE $qt SET $qc = :val WHERE ctid = CAST(:ctid AS tid)");
+            $n = 0;
+            foreach ($lignes as $ligne) {
+                $fixe = mojibake_corrige($ligne['_val']);
+                if ($fixe === null) {
                     continue;
                 }
-
-                $upd = $db->prepare("UPDATE $qt SET $qc = :val WHERE ctid = CAST(:ctid AS tid)");
-                $n = 0;
-                foreach ($lignes as $ligne) {
-                    $fixe = mojibake_corrige($ligne['_val']);
-                    if ($fixe === null) {
-                        continue;
-                    }
-                    $upd->execute([':val' => $fixe, ':ctid' => $ligne['_ctid']]);
-                    $n++;
-                }
-                if ($n > 0) {
-                    $rapport[] = $table . '.' . $col . ' : ' . $n . ' valeur(s) corrigée(s).';
-                }
+                $upd->execute([':val' => $fixe, ':ctid' => $ligne['_ctid']]);
+                $n++;
             }
-
-            $db->commit();
-            log_activity('encodage.reparation', 'Réparation des accents : ' . (count($rapport) ? implode(' | ', $rapport) : 'aucune valeur'));
-            if (count($rapport)) {
-                set_flash('success', 'Réparation terminée : ' . array_sum(array_map(static function ($l) {
-                    return (int)preg_replace('/\D+/', '', substr($l, strrpos($l, ':') + 1));
-                }, $rapport)) . ' valeur(s) corrigée(s).');
-            } else {
-                set_flash('success', 'Aucune valeur à corriger.');
+            if ($n > 0) {
+                $rapport[] = $table . '.' . $col . ' : ' . $n . ' valeur(s) corrigée(s).';
             }
-        } catch (Throwable $e) {
-            $db->rollBack();
-            $erreur = 'Échec de la réparation : ' . $e->getMessage();
         }
+
+        $db->commit();
+        log_activity('encodage.reparation', 'Réparation des accents : ' . (count($rapport) ? implode(' | ', $rapport) : 'aucune valeur'));
+        $_SESSION['rapport_accents'] = $rapport;
+        if (count($rapport)) {
+            $nbTotal = array_sum(array_map(static function ($l) {
+                return (int)preg_replace('/\D+/', '', substr($l, strrpos($l, ':') + 1));
+            }, $rapport));
+            set_flash('success', 'Réparation terminée : ' . $nbTotal . ' valeur(s) corrigée(s).');
+        } else {
+            set_flash('success', 'Aucune valeur à corriger.');
+        }
+    } catch (Throwable $e) {
+        $db->rollBack();
+        set_flash('danger', 'Échec de la réparation : ' . $e->getMessage());
     }
+
+    // Recharge la page : le nom affiché dans la barre latérale est ainsi
+    // rechargé depuis la base (corrigé), et le formulaire n'est pas renvoyé.
+    header('Location: ' . BASE_URL . 'reparer_accents.php');
+    exit;
 }
 
 // ------------------------------------------------------------
@@ -185,6 +195,10 @@ foreach ($colonnes as $c) {
 $db_server = prepareQuery('SHOW server_encoding')->fetchColumn();
 $db_client = prepareQuery('SHOW client_encoding')->fetchColumn();
 
+$moi = current_user() ?: [];
+$nom_complet = trim((string)($moi['prenom'] ?? '') . ' ' . (string)($moi['nom'] ?? ''));
+$nom_complet_fixe = $nom_complet !== '' ? mojibake_corrige($nom_complet) : null;
+
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar_admin.php';
 ?>
@@ -199,6 +213,16 @@ require_once __DIR__ . '/includes/sidebar_admin.php';
     <div class="card-header">Diagnostic</div>
     <div class="card-body">
         <div class="row g-3 small">
+            <div class="col-md-4">
+                <div class="text-muted">Votre compte (nom en base)</div>
+                <div><?= e($nom_complet) ?></div>
+                <?php if ($nom_complet_fixe !== null): ?>
+                    <div class="text-danger">Double encodage → <?= e($nom_complet_fixe) ?></div>
+                <?php else: ?>
+                    <div class="text-success">Encodage correct</div>
+                <?php endif; ?>
+                <div class="font-monospace text-muted" style="font-size:.7rem;word-break:break-all"><?= e(bin2hex($nom_complet)) ?></div>
+            </div>
             <div class="col-md-4">
                 <div class="text-muted">PHP / serveur</div>
                 <div><?= e(PHP_VERSION . ' — ' . PHP_SAPI) ?></div>

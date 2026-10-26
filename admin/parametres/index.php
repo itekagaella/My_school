@@ -79,6 +79,13 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <a href="backup.php" class="btn btn-success w-100"><i class="fa-solid fa-download me-1"></i>Sauvegarder la base de données</a>
             </div>
         </div>
+        <div class="card mt-3">
+            <div class="card-header"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Accents</div>
+            <div class="card-body">
+                <p class="text-muted small">Répare les textes enregistrés avec des accents cassés (« Ã© » au lieu de « é »).</p>
+                <a href="<?= BASE_URL ?>reparer_accents.php" class="btn btn-outline-primary w-100"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Réparer les accents</a>
+            </div>
+        </div>
     </div>
 </div>
 

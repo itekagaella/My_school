@@ -895,6 +895,88 @@ function classe_label_sql(string $alias = 'c'): string
 }
 
 /**
+ * Salles actives pour les listes déroulantes.
+ * Les salles de classe sont triées par numéro, puis les salles administratives.
+ */
+function salles_options(): array
+{
+    return prepareQuery(
+        "SELECT s.*, c.nom_classe, c.section
+         FROM salles s
+         LEFT JOIN classes c ON c.id = s.classe_id
+         WHERE s.actif = TRUE
+         ORDER BY CASE WHEN s.type = 'classe' THEN 0 ELSE 1 END,
+                  s.numero NULLS LAST, s.nom"
+    )->fetchAll();
+}
+
+/**
+ * Libellé d'une salle : « Salle 1 — 1ère année (Sciences) » pour une salle
+ * de classe, ou simplement le nom pour une salle administrative.
+ */
+function salle_label(array $salle): string
+{
+    $nom = trim((string)($salle['nom'] ?? ''));
+    if (($salle['type'] ?? '') === 'classe' && !empty($salle['nom_classe'])) {
+        return $nom . ' — ' . classe_label($salle['nom_classe'], $salle['section'] ?? null);
+    }
+    return $nom;
+}
+
+/**
+ * Options HTML d'une liste déroulante de salles, groupées par type.
+ * Conserve une éventuelle ancienne valeur libre en fin de liste.
+ */
+function salles_select_html(array $salles, ?string $selected = null): string
+{
+    $html = '';
+    $groupes = [
+        'classe'        => 'Salles de classe',
+        'administratif' => 'Salles administratives',
+    ];
+    $selection = (string)($selected ?? '');
+
+    foreach ($groupes as $type => $label) {
+        $items = array_values(array_filter($salles, static function ($s) use ($type) {
+            return ($s['type'] ?? '') === $type;
+        }));
+        if (!$items) {
+            continue;
+        }
+        $html .= '<optgroup label="' . e($label) . '">';
+        foreach ($items as $s) {
+            $sel = ((string)($s['nom'] ?? '') === $selection) ? ' selected' : '';
+            $data = $type === 'classe'
+                ? ' data-classe-id="' . (int)($s['classe_id'] ?? 0) . '"'
+                : '';
+            $html .= '<option value="' . e((string)($s['nom'] ?? '')) . '"' . $data . $sel . '>'
+                . e(salle_label($s)) . '</option>';
+        }
+        $html .= '</optgroup>';
+    }
+
+    if ($selection !== '' && !in_array($selection, array_column($salles, 'nom'), true)) {
+        $html .= '<option value="' . e($selection) . '" selected>Salle existante : ' . e($selection) . '</option>';
+    }
+
+    return $html;
+}
+
+/**
+ * Salle par défaut d'une classe (celle créée automatiquement), ou ''.
+ */
+function salle_par_defaut_classe(int $classeId): string
+{
+    if ($classeId <= 0) {
+        return '';
+    }
+    return (string)(prepareQuery(
+        "SELECT nom FROM salles WHERE classe_id = :c AND type = 'classe' LIMIT 1",
+        ['c' => $classeId]
+    )->fetchColumn() ?: '');
+}
+
+/**
  * Tri SQL des classes dans l'ordre pédagogique (classes hors liste en dernier)
  *
  * @param string $col colonne ou alias contenant le nom de classe (littéral du code uniquement)

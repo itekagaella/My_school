@@ -27,11 +27,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             elseif ($niveau === '') set_flash('error', 'Cette classe n\'existe pas dans le système scolaire burundais.');
             elseif ($sectionChoisie === $SECTION_AUTRE && $section === '') set_flash('error', 'Précisez la section ou choisissez-en une dans la liste.');
             else {
-                prepareQuery(
+                $nouvelleClasse = (int)prepareQuery(
                     'INSERT INTO classes (nom_classe, niveau, section, annee_scolaire, capacite)
-                     VALUES (:n,:l,:s,:a,:c)',
+                     VALUES (:n,:l,:s,:a,:c) RETURNING id',
                     ['n'=>$nom,'l'=>$niveau,'s'=>$section,'a'=>$annee,'c'=>$capacite]
-                );
+                )->fetchColumn();
+                if ($nouvelleClasse > 0) {
+                    try {
+                        prepareQuery('SELECT sp_creer_salle_classe(:id)', ['id'=>$nouvelleClasse]);
+                    } catch (Throwable $e) {
+                        // La migration `salles.sql` n'est pas encore appliquée :
+                        // la classe reste créée, la salle pourra être générée ensuite.
+                        error_log('classes.create salle: ' . $e->getMessage());
+                    }
+                }
                 log_activity('classes.create', 'Création de la classe ' . $nom);
                 set_flash('success', 'Classe créée.');
             }
@@ -59,6 +68,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } elseif ($action === 'delete') {
             $id = (int)($_POST['id'] ?? 0);
+            // Supprimer d'abord la salle liée à la classe (si elle existe).
+            try {
+                prepareQuery("DELETE FROM salles WHERE classe_id = :id AND type = 'classe'", ['id'=>$id]);
+            } catch (Throwable $e) {
+                // Migration `salles.sql` non appliquée : on continue.
+                error_log('classes.delete salle: ' . $e->getMessage());
+            }
             prepareQuery('DELETE FROM classes WHERE id = :id', ['id'=>$id]);
             log_activity('classes.delete', 'Suppression de la classe #' . $id);
             set_flash('success', 'Classe supprimée.');

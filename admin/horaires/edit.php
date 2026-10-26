@@ -20,6 +20,7 @@ $active_menu = 'horaires';
 $classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
+$salles = salles_options();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) set_flash('error', 'Session expirée.');
@@ -31,10 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $heure_debut = $_POST['heure_debut'] ?? '';
         $heure_fin = $_POST['heure_fin'] ?? '';
         $salle = clean_input($_POST['salle'] ?? '');
+        if ($salle === '' && $classe_id > 0) {
+            $salle = salle_par_defaut_classe($classe_id);
+        }
+        $salleValide = ($salle === '') || ($salle === (string)($h['salle'] ?? ''));
+        if (!$salleValide) {
+            $salleValide = (bool)prepareQuery(
+                'SELECT 1 FROM salles WHERE nom = :n AND actif = TRUE',
+                ['n' => $salle]
+            )->fetchColumn();
+        }
 
         if ($classe_id <= 0 || $matiere_id <= 0) set_flash('error', 'Classe et matière requises.');
         elseif (empty($heure_debut) || empty($heure_fin)) set_flash('error', 'Heures requises.');
         elseif ($heure_debut >= $heure_fin) set_flash('error', 'Heure de fin invalide.');
+        elseif (!$salleValide) set_flash('error', 'Salle invalide : choisissez une salle dans la liste.');
         else {
             prepareQuery(
                 'UPDATE horaires SET classe_id=:c, matiere_id=:m, prof_id=:p, jour=:j,
@@ -93,7 +105,10 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 <div class="col-md-3"><label class="form-label required">Heure fin</label>
                     <input type="time" name="heure_fin" class="form-control" value="<?= e($h['heure_fin']) ?>" required></div>
                 <div class="col-md-3"><label class="form-label">Salle</label>
-                    <input type="text" name="salle" class="form-control" value="<?= e($h['salle']) ?>"></div>
+                    <select name="salle" id="salle" class="form-select">
+                        <option value="">-- Aucune --</option>
+                        <?= salles_select_html($salles, $h['salle'] ?? '') ?>
+                    </select></div>
             </div>
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check me-1"></i>Enregistrer</button>
@@ -102,6 +117,18 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var classe = document.querySelector('select[name="classe_id"]');
+    var salle = document.getElementById('salle');
+    if (!classe || !salle) return;
+    classe.addEventListener('change', function () {
+        var option = salle.querySelector('option[data-classe-id="' + classe.value + '"]');
+        if (option) salle.value = option.value;
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/../../includes/footer_content.php'; ?>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

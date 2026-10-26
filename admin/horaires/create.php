@@ -12,6 +12,7 @@ $active_menu = 'horaires';
 $classes = prepareQuery('SELECT * FROM classes ORDER BY ' . classes_order_sql('nom_classe'))->fetchAll();
 $matieres = prepareQuery('SELECT * FROM matieres ORDER BY nom_matiere')->fetchAll();
 $profs = prepareQuery('SELECT * FROM profs WHERE statut = :s ORDER BY nom', ['s'=>'actif'])->fetchAll();
+$salles = salles_options();
 
 $error = '';
 $d = ['classe_id'=>(int)get('classe_id',0),'matiere_id'=>'','prof_id'=>'','jour'=>'Lundi','heure_debut'=>'08:00','heure_fin'=>'09:00','salle'=>''];
@@ -26,10 +27,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $d['heure_debut'] = $_POST['heure_debut'] ?? '';
         $d['heure_fin'] = $_POST['heure_fin'] ?? '';
         $d['salle'] = clean_input($_POST['salle'] ?? '');
+        if ($d['salle'] === '' && $d['classe_id'] > 0) {
+            $d['salle'] = salle_par_defaut_classe($d['classe_id']);
+        }
+        $salleValide = ($d['salle'] === '');
+        if (!$salleValide) {
+            $salleValide = (bool)prepareQuery(
+                'SELECT 1 FROM salles WHERE nom = :n AND actif = TRUE',
+                ['n' => $d['salle']]
+            )->fetchColumn();
+        }
 
         if ($d['classe_id'] <= 0 || $d['matiere_id'] <= 0) set_flash('error', 'Classe et matière requises.');
         elseif (empty($d['heure_debut']) || empty($d['heure_fin'])) set_flash('error', 'Heures requises.');
         elseif ($d['heure_debut'] >= $d['heure_fin']) set_flash('error', 'L\'heure de fin doit être après l\'heure de début.');
+        elseif (!$salleValide) set_flash('error', 'Salle invalide : choisissez une salle dans la liste.');
         else {
             $annee = get_param('annee_scolaire', date('Y') . '-' . (date('Y')+1));
             if ($d['prof_id'] > 0) {
@@ -117,7 +129,10 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Salle</label>
-                    <input type="text" name="salle" class="form-control" value="<?= e($d['salle']) ?>" placeholder="Ex: Salle 12">
+                    <select name="salle" id="salle" class="form-select">
+                        <option value="">-- Aucune --</option>
+                        <?= salles_select_html($salles, $d['salle']) ?>
+                    </select>
                 </div>
             </div>
             <div class="mt-4">
@@ -127,6 +142,20 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var classe = document.querySelector('select[name="classe_id"]');
+    var salle = document.getElementById('salle');
+    if (!classe || !salle) return;
+    function choisirSalleClasse() {
+        var option = salle.querySelector('option[data-classe-id="' + classe.value + '"]');
+        if (option) salle.value = option.value;
+    }
+    classe.addEventListener('change', choisirSalleClasse);
+    if (!salle.value) choisirSalleClasse();
+});
+</script>
 
 <?php require_once __DIR__ . '/../../includes/footer_content.php'; ?>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

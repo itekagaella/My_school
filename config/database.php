@@ -76,6 +76,15 @@ function db_connect(?string $dbname = null): PDO
         ]
     );
 
+    // Force les échanges en UTF-8 avec PostgreSQL, quel que soit le
+    // client_encoding par défaut du pilote (sur Windows, il peut être
+    // WIN1252 : les accents arrivent alors cassés dans l'application).
+    try {
+        $pdo->exec("SET client_encoding TO 'UTF8'");
+    } catch (PDOException $e) {
+        error_log('Encodage PostgreSQL non-aligné : ' . $e->getMessage());
+    }
+
     // Aligne le fuseau du serveur PostgreSQL sur celui de PHP.
     // Sans cela, NOW() côté BDD et date() côté PHP divergent dès que les deux
     // machines n'ont pas exactement le même fuseau (ex. Windows : heure locale

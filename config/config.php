@@ -3,6 +3,17 @@
  * Configuration principale du système My_School
  */
 
+// ------------------------------------------------------------
+// Encodage : force l'UTF-8 même si php.ini est mal configuré.
+// Sur certains serveurs (notamment Windows), default_charset vaut
+// ISO-8859-1 : les accents s'affichent alors « Ã© » malgré le
+// <meta charset="UTF-8"> des pages.
+// ------------------------------------------------------------
+ini_set('default_charset', 'UTF-8');
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header('Content-Type: text/html; charset=UTF-8');
+}
+
 // Base URL de l'application (détection automatique, surchargeable avant include)
 if (!defined('BASE_URL')) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

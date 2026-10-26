@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_login();
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 $user = current_user();
 $action = $_GET['action'] ?? 'messages';
 

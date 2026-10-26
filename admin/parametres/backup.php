@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: backup.php');
                 exit;
             }
-            header('Content-Type: application/sql');
+            header('Content-Type: application/sql; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . basename($path) . '"');
             header('Content-Length: ' . strlen($sql));
             echo $sql;
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = $safeName($_POST['file'] ?? '');
         $path = $name ? backup_dir() . '/' . $name : null;
         if ($path && is_file($path)) {
-            header('Content-Type: application/sql');
+            header('Content-Type: application/sql; charset=UTF-8');
             header('Content-Disposition: attachment; filename="' . basename($path) . '"');
             header('Content-Length: ' . (string)filesize($path));
             readfile($path);

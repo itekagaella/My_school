@@ -56,6 +56,14 @@ Générer une clé unique :
 php -r "echo bin2hex(random_bytes(32));"
 ```
 
+### Encodage des accents (UTF-8)
+
+L'application force l'UTF-8 au démarrage (`config/config.php`) et sur la
+connexion PostgreSQL : les accents restent corrects même si `php.ini`
+définit `default_charset = ISO-8859-1`, ce qui affichait « Ã© » au lieu de
+« é » sur certains serveurs Windows. Si des accents cassés subsistent,
+vérifier que `default_charset = UTF-8` dans le `php.ini` utilisé par PHP.
+
 ### Téléversements (logos, avatars, documents)
 
 Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,

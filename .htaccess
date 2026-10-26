@@ -3,6 +3,9 @@
 Options -Indexes
 DirectoryIndex index.php
 
+# Encodage par défaut (évite les accents « Ã© » sous Apache)
+AddDefaultCharset UTF-8
+
 # Protection des fichiers sensibles
 <FilesMatch "\.(sql|log|ini|htaccess|env)$">
     Require all denied

@@ -146,7 +146,31 @@ Après avoir récupéré une nouvelle version du code, les migrations de
 (sinon les nouvelles pages renvoient une erreur, les nouvelles tables
 n'existant pas encore).
 
-En ligne de commande (depuis la racine du projet) :
+### Méthode simple : `migrate.php`
+
+Le fichier `migrate.php` (à la racine du projet) applique les migrations
+manquantes en une seule fois :
+
+- **Navigateur** : se connecter en **administrateur**, puis ouvrir
+  `http://votre-serveur/migrate.php`. La page indique pour chaque fichier
+  s'il a été appliqué, s'il était déjà à jour ou s'il a échoué.
+- **Ligne de commande** (depuis la racine du projet) :
+
+```bash
+php migrate.php
+```
+
+Il suffit de relancer ce fichier après chaque mise à jour du code : les
+migrations déjà appliquées sont ignorées et un fichier modifié est rejoué
+automatiquement (suivi dans la table `schema_migrations`). Pour tout rejouer :
+
+```bash
+php migrate.php --force
+```
+
+(ou `migrate.php?force=1` dans le navigateur).
+
+### Méthode manuelle : psql
 
 ```bash
 for f in config/migrations/*.sql; do
@@ -162,4 +186,4 @@ migrations.
 
 ## Sécurité
 
-En production : changez l'administrateur par défaut, supprimez `install.php`, modifiez `ENCRYPTION_KEY` et les identifiants PostgreSQL.
+En production : changez l'administrateur par défaut, supprimez `install.php`, modifiez `ENCRYPTION_KEY` et les identifiants PostgreSQL. `migrate.php` n'est accessible qu'à un administrateur connecté ; supprimez-le après la mise à jour si vous préférez passer par `psql`.

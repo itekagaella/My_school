@@ -42,7 +42,10 @@ if (is_logged_in()) header('Location: ' . BASE_URL);
                     $result = request_password_reset($email);
                     $message = $result[1];
                     $type = $result[0] ? 'success' : 'error';
-                }
+                    if ($result[0]) {
+                        header('Location: reset_password.php');
+                        exit;
+                    }
             }
         }
         ?>

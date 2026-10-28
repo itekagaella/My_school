@@ -376,7 +376,7 @@ function require_permission(string $permission): void
 }
 
 /**
- * Génère et envoie un token de réinitialisation de mot de passe
+ * Génère et envoie un OTP de réinitialisation de mot de passe
  */
 function request_password_reset(string $email): array
 {
@@ -388,30 +388,81 @@ function request_password_reset(string $email): array
 
     // Réponse générique pour éviter l'énumération des comptes
     if (!$user) {
-        return [true, 'Si l\'email existe, un lien de réinitialisation a été envoyé.'];
+        return [true, 'Si l\'email existe, un code de réinitialisation a été envoyé.'];
     }
 
-    $token = generate_token(32);
-    $expires = date('Y-m-d H:i:s', time() + 3600);
+    // Invalider d'anciens codes
+    try {
+        prepareQuery(
+            "UPDATE password_resets SET used = TRUE WHERE user_id = :uid AND used = FALSE",
+            ['uid' => $user['id']]
+        );
+    } catch (Throwable $e) {
+    }
+
+    $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    $expires = date('Y-m-d H:i:s', time() + 600);
+
     prepareQuery(
         'INSERT INTO password_resets (user_id, token, expires_at)
          VALUES (:uid, :token, :exp)',
-        ['uid' => $user['id'], 'token' => hash('sha256', $token), 'exp' => $expires]
+        ['uid' => $user['id'], 'token' => hash('sha256', $otp), 'exp' => $expires]
     );
 
-    send_reset_email($user['email'], $user['nom'], $token);
-    // Sans SMTP, afficher le lien de test uniquement en accès local
-    // (ailleurs : Admin > Journal > Boîte email)
-    if (!last_mail_delivered() && demo_disclose()) {
-        $_SESSION['reset_link_demo'] = [
-            'url' => BASE_URL . 'reset_password.php?token=' . urlencode($token),
-            'exp' => time() + 3600,
-        ];
-    } else {
-        unset($_SESSION['reset_link_demo']);
+    send_otp_reset_email($user['email'], trim(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')), $otp);
+
+    $_SESSION['reset_email'] = $user['email'];
+    $_SESSION['reset_user_id'] = (int)$user['id'];
+    $_SESSION['reset_otp_sent_at'] = time();
+
+    log_activity('auth.password_reset_request', 'Demande de réinitialisation de mot de passe par OTP');
+    return [true, 'Un code à 6 chiffres a été envoyé à votre adresse email.'];
+}
+
+/**
+ * Vérifie l'OTP et réinitialise le mot de passe
+ */
+function reset_password_with_otp(string $email, string $otp, string $newPassword): array
+{
+    $email = strtolower(trim($email));
+    $otp = trim($otp);
+    if (!preg_match('/^[0-9]{6}$/', $otp)) {
+        return [false, 'Code invalide.'];
     }
-    log_activity('auth.password_reset_request', 'Demande de réinitialisation de mot de passe');
-    return [true, 'Si l\'email existe, un lien de réinitialisation a été envoyé.'];
+    if (strlen($newPassword) < 8) {
+        return [false, 'Le mot de passe doit contenir au moins 8 caractères.'];
+    }
+
+    $user = prepareQuery(
+        'SELECT * FROM utilisateurs WHERE email = :email',
+        ['email' => $email]
+    )->fetch();
+
+    if (!$user) {
+        return [false, 'Code invalide ou expiré.'];
+    }
+
+    $row = prepareQuery(
+        'SELECT * FROM password_resets WHERE user_id = :uid AND token = :token AND used = FALSE ORDER BY id DESC LIMIT 1',
+        ['uid' => $user['id'], 'token' => hash('sha256', $otp)]
+    )->fetch();
+
+    if (!$row || $row['expires_at'] < date('Y-m-d H:i:s', time())) {
+        return [false, 'Code invalide ou expiré.'];
+    }
+
+    prepareQuery(
+        'UPDATE utilisateurs SET password_hash = :hash, tentatives_connexion = 0,
+         compte_verrouille = FALSE, verrou_date = NULL WHERE id = :uid',
+        ['hash' => password_hash($newPassword, PASSWORD_BCRYPT), 'uid' => $user['id']]
+    );
+    prepareQuery(
+        'UPDATE password_resets SET used = TRUE WHERE id = :id',
+        ['id' => $row['id']]
+    );
+    unset($_SESSION['reset_email'], $_SESSION['reset_user_id'], $_SESSION['reset_otp_sent_at']);
+    log_activity('auth.password_reset', 'Mot de passe réinitialisé par OTP');
+    return [true, 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.'];
 }
 
 /**
@@ -529,5 +580,17 @@ function send_reset_email(string $to, string $name, string $token): void
     $subject = 'Réinitialisation de mot de passe My_School';
     $body = "Bonjour {$name},\n\nCliquez sur ce lien pour réinitialiser votre mot de passe :\n{$link}\n" .
             "Ce lien expire dans 1 heure.\n\nMy_School";
+    send_email($to, $subject, $body);
+}
+
+function send_otp_reset_email(string $to, string $name, string $otp): void
+{
+    $subject = 'Code de réinitialisation My_School';
+    $body  = "Bonjour " . trim($name) . ",\n\n";
+    $body .= "Votre code de réinitialisation de mot de passe est :\n\n";
+    $body .= "        " . $otp . "\n\n";
+    $body .= "Ce code expire dans 10 minutes.\n\n";
+    $body .= "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\n";
+    $body .= "Cordialement,\nMy_School";
     send_email($to, $subject, $body);
 }

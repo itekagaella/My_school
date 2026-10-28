@@ -50,12 +50,16 @@ function rapport_xlsx_build(array $ds, array $meta): string
 
     // Valeurs d'affichage (identiques à l'aperçu et au PDF)
     $cells = [];
+    $rawCells = [];
     foreach ($rows as $row) {
         $line = [];
+        $rawLine = [];
         foreach ($row as $i => $v) {
+            $rawLine[] = $v;
             $line[] = rapport_format_value($types[$i] ?? 'text', $v);
         }
         $cells[] = $line;
+        $rawCells[] = $rawLine;
     }
 
     $lastCol = xlsx_col_letter($nbCols - 1);
@@ -111,9 +115,24 @@ function rapport_xlsx_build(array $ds, array $meta): string
             $ref = xlsx_col_letter($i) . $rowNum;
             $t = $types[$i] ?? 'text';
             $zebra = ($r % 2) === 1;
+            $raw = $rawCells[$r][$i] ?? null;
             if ($t === 'num' && $v !== '' && is_numeric($v)) {
                 $s = $zebra ? 8 : 7;
-                $sheet .= '<c r="' . $ref . '" s="' . $s . '"><v>' . (float)$v . '</v></c>';
+                $num = (float)$v;
+                // Préserver les entiers (note 15 -> 15, pas 15.00) si la valeur brute est entière
+                if ($raw !== null && $raw !== '' && is_numeric((string)$raw)) {
+                    $rf = (float)$raw;
+                    if (abs($rf - round($rf)) < 1e-9) {
+                        $num = round($rf);
+                    }
+                }
+                if (is_float($num) && floor($num) === $num) {
+                    $numStr = (string)(int)$num;
+                } else {
+                    $numStr = rtrim(rtrim(sprintf('%.2f', $num), '0'), '.');
+                    if ($numStr === '-0') $numStr = '0';
+                }
+                $sheet .= '<c r="' . $ref . '" s="' . $s . '"><v>' . $numStr . '</v></c>';
             } elseif ($t === 'date' && $v !== '') {
                 $serial = xlsx_date_serial($v);
                 if ($serial !== null) {

@@ -28,17 +28,29 @@ class SmtpMailer
 
     public function __construct(array $config = [])
     {
-        $this->host       = (string)($config['host'] ?? MAIL_HOST);
-        $this->port       = (int)($config['port'] ?? MAIL_PORT);
-        $this->encryption = strtolower((string)($config['encryption'] ?? MAIL_ENCRYPTION));
+        $get = function($key, $const, $default) use ($config) {
+            if (isset($config[$key]) && $config[$key] !== '') return $config[$key];
+            if (defined($const) && constant($const) !== '') return constant($const);
+            $v = getenv($key);
+            if ($v !== false && $v !== '') return $v;
+            if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
+            // try lowercase
+            $v2 = getenv(strtolower($key));
+            if ($v2 !== false && $v2 !== '') return $v2;
+            return $default;
+        };
+
+        $this->host       = (string)$get('MAIL_HOST', 'MAIL_HOST', '127.0.0.1');
+        $this->port       = (int)$get('MAIL_PORT', 'MAIL_PORT', 1025);
+        $this->encryption = strtolower((string)$get('MAIL_ENCRYPTION', 'MAIL_ENCRYPTION', 'none'));
         if (!in_array($this->encryption, ['none', 'tls', 'ssl'], true)) {
             $this->encryption = 'none';
         }
-        $this->username  = (string)($config['username'] ?? MAIL_USERNAME);
-        $this->password  = (string)($config['password'] ?? MAIL_PASSWORD);
-        $this->timeout   = (int)($config['timeout'] ?? MAIL_TIMEOUT);
-        $this->from      = (string)($config['from'] ?? MAIL_FROM);
-        $this->fromName  = (string)($config['from_name'] ?? MAIL_FROM_NAME);
+        $this->username  = (string)$get('MAIL_USERNAME', 'MAIL_USERNAME', '');
+        $this->password  = (string)$get('MAIL_PASSWORD', 'MAIL_PASSWORD', '');
+        $this->timeout   = (int)$get('MAIL_TIMEOUT', 'MAIL_TIMEOUT', 10);
+        $this->from      = (string)$get('MAIL_FROM', 'MAIL_FROM', 'no-reply@myschool.edu');
+        $this->fromName  = (string)$get('MAIL_FROM_NAME', 'MAIL_FROM_NAME', 'My_School');
     }
 
     public function dernierErreur(): string
@@ -123,7 +135,9 @@ class SmtpMailer
 
     private function authentifier(string $ehlo): void
     {
+        error_log('[SMTP] Auth check - user: ' . ($this->username === '' ? 'EMPTY' : 'SET') . ' pass: ' . ($this->password === '' ? 'EMPTY' : 'SET'));
         if ($this->username === '' || $this->password === '') {
+            error_log('[SMTP] Skipping auth - credentials empty');
             return;
         }
 
@@ -131,18 +145,22 @@ class SmtpMailer
         foreach (preg_split('/\r?\n/', $ehlo) as $line) {
             if (stripos($line, 'AUTH') !== false) {
                 $authLine = strtoupper($line);
+                error_log('[SMTP] AUTH line: ' . $authLine);
             }
         }
 
         // Certains serveurs (Outlook…) n'annoncent que PLAIN.
         if ($authLine !== '' && strpos($authLine, 'LOGIN') === false && strpos($authLine, 'PLAIN') !== false) {
+            error_log('[SMTP] Using AUTH PLAIN');
             $this->commande('AUTH PLAIN ' . base64_encode("\0" . $this->username . "\0" . $this->password), [235]);
             return;
         }
 
+        error_log('[SMTP] Using AUTH LOGIN');
         $this->commande('AUTH LOGIN', [334]);
         $this->commande(base64_encode($this->username), [334]);
         $this->commande(base64_encode($this->password), [235]);
+        error_log('[SMTP] Auth completed');
     }
 
     private function envoyerMessage(string $to, string $subject, string $html, string $text, ?string $replyTo): void

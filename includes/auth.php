@@ -460,7 +460,14 @@ function reset_password_with_otp(string $email, string $otp, string $newPassword
         'UPDATE password_resets SET used = TRUE WHERE id = :id',
         ['id' => $row['id']]
     );
-    unset($_SESSION['reset_email'], $_SESSION['reset_user_id'], $_SESSION['reset_otp_sent_at']);
+    // Nettoyer complètement les sessions de réinitialisation
+    unset($_SESSION['reset_email']);
+    unset($_SESSION['reset_user_id']);
+    unset($_SESSION['reset_otp_sent_at']);
+    unset($_SESSION['reset_link_demo']);
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(true);
+    }
     log_activity('auth.password_reset', 'Mot de passe réinitialisé par OTP');
     return [true, 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.'];
 }
@@ -585,6 +592,11 @@ function send_reset_email(string $to, string $name, string $token): void
 
 function send_otp_reset_email(string $to, string $name, string $otp): void
 {
+    mailer_charger_env();
+    if (!function_exists('email_transporter')) {
+        require_once __DIR__ . '/mailer.php';
+    }
+
     $subject = 'Code de réinitialisation My_School';
     $body  = "Bonjour " . trim($name) . ",\n\n";
     $body .= "Votre code de réinitialisation de mot de passe est :\n\n";
@@ -592,5 +604,9 @@ function send_otp_reset_email(string $to, string $name, string $otp): void
     $body .= "Ce code expire dans 10 minutes.\n\n";
     $body .= "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\n";
     $body .= "Cordialement,\nMy_School";
-    send_email($to, $subject, $body);
+
+    $html = nl2br(e($body));
+    $ok = email_transporter($to, $subject, $html, $body);
+    email_store($to, $subject, $body, $ok, $ok ? 'sent' : 'echec');
+    $GLOBALS['_mail_delivered'] = (bool)$ok;
 }

@@ -61,6 +61,7 @@ if (empty($email)) {
                 } else {
                     $result = reset_password_with_otp($email, $otp, $password);
                     if ($result[0]) {
+                        unset($_SESSION['reset_email'], $_SESSION['reset_user_id'], $_SESSION['reset_otp_sent_at']);
                         $message = $result[1];
                         $type = 'success';
                         $done = true;

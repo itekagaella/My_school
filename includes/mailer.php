@@ -190,9 +190,11 @@ class SmtpMailer
 
     private function authentifier(string $ehlo): void
     {
+        @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] Auth check - user: ' . ($this->username === '' ? 'EMPTY' : 'SET') . ' pass: ' . ($this->password === '' ? 'EMPTY' : 'SET') . ' host:' . $this->host . ':' . $this->port . PHP_EOL, FILE_APPEND);
         error_log('[SMTP] Auth check - user: ' . ($this->username === '' ? 'EMPTY' : 'SET') . ' pass: ' . ($this->password === '' ? 'EMPTY' : 'SET'));
         if ($this->username === '' || $this->password === '') {
             error_log('[SMTP] Skipping auth - credentials empty');
+            @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] Skipping auth - credentials empty' . PHP_EOL, FILE_APPEND);
             return;
         }
 
@@ -201,6 +203,7 @@ class SmtpMailer
             if (stripos($line, 'AUTH') !== false) {
                 $authLine = strtoupper($line);
                 error_log('[SMTP] AUTH line: ' . $authLine);
+                @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] AUTH line: ' . $authLine . PHP_EOL, FILE_APPEND);
             }
         }
 

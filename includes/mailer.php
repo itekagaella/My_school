@@ -269,8 +269,10 @@ class SmtpMailer
  *
  * @param ?string $statut sent | local | echec (déduit de $delivered si null)
  */
+if (!function_exists('email_store')) {
 function email_store(string $to, string $subject, string $body, bool $delivered, ?string $statut = null): void
 {
+
     $dir = ROOT_PATH . 'storage/mail';
     if (!is_dir($dir)) {
         @mkdir($dir, 0775, true);
@@ -296,6 +298,7 @@ function email_store(string $to, string $subject, string $body, bool $delivered,
 
     $file = $dir . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.eml';
     @file_put_contents($file, $raw);
+}
 }
 
 /**

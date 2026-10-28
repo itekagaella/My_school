@@ -17,6 +17,7 @@ require_once __DIR__ . '/mailer.php';
  * Une catégorie est active par défaut ; une ligne dans preferences_email
  * avec actif = FALSE la désactive.
  */
+if (!function_exists('email_preference_active')) {
 function email_preference_active(int $userId, string $categorie): bool
 {
     try {
@@ -746,4 +747,6 @@ function email_relancer(int $id): bool
     } catch (Throwable $e) {
         return false;
     }
+}
+
 }

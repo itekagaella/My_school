@@ -381,6 +381,7 @@ function email_store(string $to, string $subject, string $body, bool $delivered,
  * Envoie immédiatement un email via le transport configuré.
  * En mode « log », renvoie false : c'est la file d'attente qui archive.
  */
+if (!function_exists('email_transporter')) {
 function email_transporter(string $to, string $subject, string $html, string $text = ''): bool
 {
     mailer_charger_env();
@@ -403,4 +404,5 @@ function email_transporter(string $to, string $subject, string $html, string $te
     }
 
     return false;
+}
 }

@@ -43,6 +43,9 @@ function xlsx_date_serial(string $dmy)
  */
 function rapport_xlsx_build(array $ds, array $meta): string
 {
+    if (!class_exists('ZipArchive')) {
+        throw new Exception('L\'extension PHP ZipArchive est requise pour l\'export XLSX. Veuillez l\'activer sur votre serveur.');
+    }
     $headers = $ds['headers'];
     $types = $ds['types'];
     $rows = $ds['rows'];
@@ -269,7 +272,14 @@ function rapport_xlsx_build(array $ds, array $meta): string
  */
 function rapport_xlsx_download(array $ds, array $meta, string $filename): void
 {
-    $data = rapport_xlsx_build($ds, $meta);
+    try {
+        $data = rapport_xlsx_build($ds, $meta);
+    } catch (Throwable $e) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $e->getMessage();
+        exit;
+    }
     if ($data === '') {
         http_response_code(500);
         header('Content-Type: text/plain; charset=UTF-8');

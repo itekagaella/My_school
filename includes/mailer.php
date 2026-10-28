@@ -85,14 +85,16 @@ class SmtpMailer
     {
         mailer_charger_env();
         $get = function($key, $const, $default) use ($config) {
-            if (isset($config[$key]) && $config[$key] !== '') return $config[$key];
-            if (defined($const) && constant($const) !== '') return constant($const);
+            if (isset($config[$key]) && $config[$key] !== '' && $config[$key] !== null) return $config[$key];
+            if (defined($const) && constant($const) !== '' && constant($const) !== null) return constant($const);
             $v = getenv($key);
             if ($v !== false && $v !== '') return $v;
             if (isset($_ENV[$key]) && $_ENV[$key] !== '') return $_ENV[$key];
-            // try lowercase
             $v2 = getenv(strtolower($key));
             if ($v2 !== false && $v2 !== '') return $v2;
+            // try without prefix
+            $v3 = getenv(str_replace('MAIL_', '', $key));
+            if ($v3 !== false && $v3 !== '') return $v3;
             return $default;
         };
 

@@ -93,12 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_valid_email($to)) {
                 set_flash('error', 'Adresse email invalide.');
             } else {
+                $smtpHost = defined('MAIL_HOST') ? MAIL_HOST : (getenv('MAIL_HOST') ?: '');
+                $smtpPort = defined('MAIL_PORT') ? MAIL_PORT : (getenv('MAIL_PORT') ?: '');
                 $modele = email_modele(
                     'Test d\'envoi My_School',
                     'Cet email confirme que la configuration email fonctionne.',
                     [
                         'Transport' => $mailTransport,
-                        'Serveur'   => $mailTransport === 'smtp' ? MAIL_HOST . ':' . MAIL_PORT : '—',
+                        'Serveur'   => $mailTransport === 'smtp' ? ($smtpHost . ':' . $smtpPort) : '—',
                         'Date'      => date('d/m/Y H:i:s'),
                     ]
                 );

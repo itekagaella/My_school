@@ -657,7 +657,16 @@ function email_traiter_file(int $limite = 20): array
             // Mode démo : l'archivage .eml tient lieu d'envoi.
             $ok = true;
         } elseif (MAIL_TRANSPORT === 'smtp') {
-            $mailer = new SmtpMailer();
+            $mailer = new SmtpMailer([
+                'host' => defined('MAIL_HOST') ? MAIL_HOST : getenv('MAIL_HOST'),
+                'port' => defined('MAIL_PORT') ? MAIL_PORT : (int)getenv('MAIL_PORT'),
+                'encryption' => defined('MAIL_ENCRYPTION') ? MAIL_ENCRYPTION : getenv('MAIL_ENCRYPTION'),
+                'username' => defined('MAIL_USERNAME') ? MAIL_USERNAME : getenv('MAIL_USERNAME'),
+                'password' => defined('MAIL_PASSWORD') ? MAIL_PASSWORD : getenv('MAIL_PASSWORD'),
+                'from' => defined('MAIL_FROM') ? MAIL_FROM : getenv('MAIL_FROM'),
+                'from_name' => defined('MAIL_FROM_NAME') ? MAIL_FROM_NAME : getenv('MAIL_FROM_NAME'),
+                'timeout' => defined('MAIL_TIMEOUT') ? MAIL_TIMEOUT : (int)(getenv('MAIL_TIMEOUT') ?: 10),
+            ]);
             $ok = $mailer->envoyer(
                 (string)$ligne['destinataire'],
                 (string)$ligne['sujet'],

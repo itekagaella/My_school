@@ -59,14 +59,58 @@ define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10 Mo
 define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'txt']);
 define('UPLOAD_DIR', ROOT_PATH . 'assets/uploads/');
 
-// Configuration email (utiliser PHPMailer en production)
-define('MAIL_ENABLED', false);
-define('MAIL_HOST', 'smtp.example.com');
-define('MAIL_PORT', 587);
-define('MAIL_USERNAME', '');
-define('MAIL_PASSWORD', '');
-define('MAIL_FROM', 'no-reply@myschool.edu');
-define('MAIL_FROM_NAME', 'My_School');
+// Configuration email
+if (!function_exists('config_env')) {
+    function config_env(string $key, string $default = ''): string
+    {
+        $v = getenv($key);
+        if ($v !== false && $v !== '') {
+            return $v;
+        }
+        if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+            return (string)$_ENV[$key];
+        }
+        $envFile = __DIR__ . '/../.env';
+        if (is_file($envFile)) {
+            foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $envLine) {
+                $envLine = trim($envLine);
+                if ($envLine === '' || $envLine === '' || $envLine[0] === '#' || strpos($envLine, '=') === false) {
+                    continue;
+                }
+                [$envKey, $envVal] = explode('=', $envLine, 2);
+                if (trim($envKey) !== $key) {
+                    continue;
+                }
+                $envVal = trim($envVal);
+                if (strlen($envVal) >= 2 && (($envVal[0] === '"' && substr($envVal, -1) === '"') || ($envVal[0] === "'" && substr($envVal, -1) === "'"))) {
+                    $envVal = substr($envVal, 1, -1);
+                }
+                return $envVal;
+            }
+        }
+        return $default;
+    }
+}
+
+$mailTransportCfg = strtolower(config_env('MAIL_TRANSPORT', ''));
+if ($mailTransportCfg === '') {
+    $mailTransportCfg = filter_var(config_env('MAIL_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN) ? 'mail' : 'log';
+}
+if (!in_array($mailTransportCfg, ['smtp', 'mail', 'log'], true)) {
+    $mailTransportCfg = 'log';
+}
+define('MAIL_TRANSPORT', $mailTransportCfg);
+define('MAIL_ENABLED', MAIL_TRANSPORT !== 'log');
+
+define('MAIL_HOST', config_env('MAIL_HOST', '127.0.0.1'));
+define('MAIL_PORT', (int)config_env('MAIL_PORT', '1025'));
+define('MAIL_ENCRYPTION', strtolower(config_env('MAIL_ENCRYPTION', 'none')));
+define('MAIL_USERNAME', config_env('MAIL_USERNAME', ''));
+define('MAIL_PASSWORD', config_env('MAIL_PASSWORD', ''));
+define('MAIL_FROM', config_env('MAIL_FROM', 'no-reply@myschool.edu'));
+define('MAIL_FROM_NAME', config_env('MAIL_FROM_NAME', 'My_School'));
+define('MAIL_TIMEOUT', max(3, (int)config_env('MAIL_TIMEOUT', '10')));
+define('CRON_TOKEN', config_env('CRON_TOKEN', ''));
 
 // Clé de chiffrement (à changer en production - surchargeable via .env)
 // Charger .env si disponible (le fichier database.php le fait aussi, mais ici

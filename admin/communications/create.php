@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $commId = getDB()->lastInsertId();
 
             if ($d['statut'] === 'publie') {
-                send_notifications($commId, $d['destinataires'], $d['titre'], $d['contenu'], $d['type']);
+                communication_notifier_destinataires($commId, $d['destinataires'], $d['titre'], $d['contenu'], $d['type']);
             }
 
             log_activity('communications.create', 'Création de la communication "' . $d['titre'] . '" (ID ' . $commId . ')');
@@ -59,37 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: index.php');
             exit;
         }
-    }
-}
-
-function send_notifications(int $commId, array $destinataires, string $titre, string $contenu, string $type): void
-{
-    $lien = 'client/communication.php?id=' . $commId;
-    $message = mb_substr($contenu, 0, 200);
-    $userIds = [];
-
-    foreach ($destinataires as $dest) {
-        if ($dest === 'tous') {
-            $users = prepareQuery('SELECT id FROM utilisateurs WHERE actif = TRUE')->fetchAll();
-            foreach ($users as $u) $userIds[] = $u['id'];
-            break;
-        } elseif (strpos($dest, 'role:') === 0) {
-            $role = substr($dest, 5);
-            $users = prepareQuery('SELECT id FROM utilisateurs WHERE role = :role AND actif = TRUE', ['role' => $role])->fetchAll();
-            foreach ($users as $u) $userIds[] = $u['id'];
-        } elseif (strpos($dest, 'classe:') === 0) {
-            $classeId = (int)substr($dest, 7);
-            $users = prepareQuery(
-                'SELECT DISTINCT u.id FROM utilisateurs u JOIN eleves e ON e.user_id = u.id WHERE e.classe_id = :cid AND u.actif = TRUE',
-                ['cid' => $classeId]
-            )->fetchAll();
-            foreach ($users as $u) $userIds[] = $u['id'];
-        }
-    }
-
-    $userIds = array_unique($userIds);
-    foreach ($userIds as $uid) {
-        notify($uid, $titre, $message, $type, $lien);
     }
 }
 

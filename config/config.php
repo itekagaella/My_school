@@ -1,18 +1,7 @@
-<?php
+`<?php
 /**
  * Configuration principale du système My_School
  */
-
-// ------------------------------------------------------------
-// Encodage : force l'UTF-8 même si php.ini est mal configuré.
-// Sur certains serveurs (notamment Windows), default_charset vaut
-// ISO-8859-1 : les accents s'affichent alors « Ã© » malgré le
-// <meta charset="UTF-8"> des pages.
-// ------------------------------------------------------------
-ini_set('default_charset', 'UTF-8');
-if (PHP_SAPI !== 'cli' && !headers_sent()) {
-    header('Content-Type: text/html; charset=UTF-8');
-}
 
 // Base URL de l'application (détection automatique, surchargeable avant include)
 if (!defined('BASE_URL')) {
@@ -67,41 +56,11 @@ define('SESSION_TIMEOUT', 1800);
 
 // Paramètres d'upload
 define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10 Mo
-define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'txt']);
-// Images autorisées (photos de profil, logos de club)
-define('ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-define('ALLOWED_IMAGE_MIMES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+define('ALLOWED_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'gif', 'txt']);
 define('UPLOAD_DIR', ROOT_PATH . 'assets/uploads/');
 
-// Lit une variable d'environnement : getenv() → $_ENV → fichier .env
-if (!function_exists('config_env')) {
-    function config_env(string $key, string $default = ''): string
-    {
-        $v = getenv($key);
-        if ($v !== false && $v !== '') return $v;
-        if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
-        $envFile = __DIR__ . '/../.env';
-        if (is_file($envFile)) {
-            foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $envLine) {
-                $envLine = trim($envLine);
-                if ($envLine === '' || $envLine[0] === '#' || strpos($envLine, '=') === false) continue;
-                [$envKey, $envVal] = explode('=', $envLine, 2);
-                if (trim($envKey) !== $key) continue;
-                $envVal = trim($envVal);
-                if (strlen($envVal) >= 2 && (($envVal[0] === '"' && substr($envVal, -1) === '"') || ($envVal[0] === "'" && substr($envVal, -1) === "'"))) {
-                    $envVal = substr($envVal, 1, -1);
-                }
-                return $envVal;
-            }
-        }
-        return $default;
-    }
-}
-
-// Configuration email
-// MAIL_ENABLED=true → envoi réel via mail() (PHPMailer/SMTP recommandé en production).
-// Sinon les emails sont journalisés dans storage/mail/ (boîte de démo).
-define('MAIL_ENABLED', filter_var(config_env('MAIL_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN));
+// Configuration email (utiliser PHPMailer en production)
+define('MAIL_ENABLED', false);
 define('MAIL_HOST', 'smtp.example.com');
 define('MAIL_PORT', 587);
 define('MAIL_USERNAME', '');

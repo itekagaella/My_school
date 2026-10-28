@@ -38,13 +38,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
             $eleveId = (int)$eleveId;
             if ($eleveId <= 0 || !array_key_exists($st, $statutsLabels)) continue;
             $motif = clean_input($motifs[$eleveId] ?? '');
-            prepareQuery(
+            $presence = prepareQuery(
                 "INSERT INTO presences (eleve_id, date_presence, statut, motif)
                  VALUES (:e, :d, :st, :m)
                  ON CONFLICT (eleve_id, date_presence)
-                 DO UPDATE SET statut = EXCLUDED.statut, motif = EXCLUDED.motif",
+                 DO UPDATE SET statut = EXCLUDED.statut, motif = EXCLUDED.motif
+                 RETURNING id",
                 ['e' => $eleveId, 'd' => $postDate, 'st' => $st, 'm' => ($motif ?: null)]
-            );
+            )->fetch();
+
+            if ($presence && in_array($st, ['absent', 'retard'], true)) {
+                notifier_presence((int)$presence['id'], $eleveId, $postDate, $st, $motif);
+            }
             $saved++;
         }
         log_activity('surveillance.presences', $saved . ' présence(s) enregistrée(s) pour ' . $postDate);

@@ -53,14 +53,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
         } else {
             try {
                 $recu = generer_numero_recu();
-                prepareQuery(
+                $paiement = prepareQuery(
                     'INSERT INTO paiements (eleve_id, frais_id, montant, periode, date_paiement, mode_paiement,
                                             reference, recu_numero, observation, enregistre_par)
-                     VALUES (:e, :f, :m, :p, :dp, :mode, :ref, :recu, :obs, :uid)',
+                     VALUES (:e, :f, :m, :p, :dp, :mode, :ref, :recu, :obs, :uid)
+                     RETURNING id',
                     ['e'=>$d['eleve_id'],'f'=>($d['frais_id'] ?: null),'m'=>$montant,'p'=>($d['periode'] ?: null),
                      'dp'=>$d['date_paiement'],'mode'=>$d['mode_paiement'],'ref'=>($d['reference'] ?: null),
                      'recu'=>$recu,'obs'=>($d['observation'] ?: null),'uid'=>current_user()['id']]
-                );
+                )->fetch();
+
+                if ($paiement) {
+                    notifier_paiement(
+                        (int)$paiement['id'],
+                        (int)$d['eleve_id'],
+                        $montant,
+                        $recu,
+                        $d['date_paiement'],
+                        $d['mode_paiement'],
+                        $d['frais_id'] ? (int)$d['frais_id'] : null
+                    );
+                }
                 log_activity('finance.paiement_create', 'Paiement ' . $recu . ' (' . format_montant($montant) . ')');
                 set_flash('success', 'Paiement enregistré. Reçu : ' . $recu);
                 header('Location: paiements.php');

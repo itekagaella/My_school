@@ -76,16 +76,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         )->fetch();
         if ((int)($eleve_ok['nb'] ?? 0) === 0) continue;
 
-        prepareQuery(
+        $noteRow = prepareQuery(
             "INSERT INTO notes (eleve_id, matiere_id, prof_id, note, type_evaluation, date_evaluation, appreciation)
             VALUES (:eid, :mid, :pid, :note, :type, :date, :apprec)
             ON CONFLICT (eleve_id, matiere_id, type_evaluation, date_evaluation)
-            DO UPDATE SET note = EXCLUDED.note, appreciation = EXCLUDED.appreciation",
+            DO UPDATE SET note = EXCLUDED.note, appreciation = EXCLUDED.appreciation
+            RETURNING id",
             [
                 'eid'=>$eid, 'mid'=>$m_id, 'pid'=>$prof_id,
                 'note'=>$note_val, 'type'=>$type_ev, 'date'=>$date_ev, 'apprec'=>$appreciation
             ]
-        );
+        )->fetch();
+
+        if ($noteRow) {
+            notifier_note(
+                (int)$noteRow['id'],
+                (int)$eid,
+                (int)$m_id,
+                $type_ev,
+                $date_ev,
+                (float)$note_val,
+                $appreciation ?: null
+            );
+        }
     }
 
     log_activity('notes.saisie', "Notes saisies pour matière #{$m_id}, type={$type_ev}, date={$date_ev}");

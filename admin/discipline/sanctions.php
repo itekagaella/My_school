@@ -67,13 +67,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
             if ($duree === null && $dateFin) {
                 $duree = max(0, (int)((strtotime($dateFin) - strtotime($d['date_debut'])) / 86400));
             }
-            prepareQuery(
+            $sanction = prepareQuery(
                 'INSERT INTO sanctions (eleve_id, incident_id, type_sanction, description, date_debut, date_fin, duree_jours, prononcee_par, statut)
-                 VALUES (:e, :inc, :t, :desc, :dd, :df, :dur, :uid, :st)',
+                 VALUES (:e, :inc, :t, :desc, :dd, :df, :dur, :uid, :st)
+                 RETURNING id',
                 ['e'=>$d['eleve_id'],'inc'=>($d['incident_id'] ?: null),'t'=>$d['type_sanction'],
                  'desc'=>($d['description'] ?: null),'dd'=>$d['date_debut'],'df'=>$dateFin,'dur'=>$duree,
                  'uid'=>current_user()['id'],'st'=>(array_key_exists($d['statut'], $statuts) ? $d['statut'] : 'en_cours')]
-            );
+            )->fetch();
+
+            if ($sanction) {
+                notifier_sanction(
+                    (int)$sanction['id'],
+                    (int)$d['eleve_id'],
+                    $d['type_sanction'],
+                    $d['description'] ?: null,
+                    $d['date_debut'],
+                    $dateFin,
+                    $duree
+                );
+            }
             log_activity('discipline.sanction_create', 'Sanction ' . $d['type_sanction'] . ' (élève #' . $d['eleve_id'] . ')');
             set_flash('success', 'Sanction enregistrée.');
             header('Location: sanctions.php');

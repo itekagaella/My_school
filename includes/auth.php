@@ -447,23 +447,17 @@ function reset_password(string $token, string $newPassword): array
 
 // ============================================================
 // ENVOI D'EMAILS
-// MAIL_ENABLED=true  -> envoi réel via mail() (PHPMailer/SMTP en production)
-// MAIL_ENABLED=false -> journalisation dans storage/mail/ (boîte de démo,
+// MAIL_TRANSPORT=smtp → envoi réel via SMTP (Brevo, Gmail, hébergeur…)
+// MAIL_TRANSPORT=log  → archivage dans storage/mail/ (boîte de démo,
 //                        consultable dans Admin > Journal > Boîte email)
+// Les emails de notification passent par la file d'attente
+// (includes/email_notifications.php).
 // ============================================================
 
 function send_email(string $to, string $subject, string $body): bool
 {
-    $delivered = false;
-
-    if (MAIL_ENABLED) {
-        $headers = 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM . ">\r\n"
-                 . 'Reply-To: ' . MAIL_FROM . "\r\n"
-                 . "MIME-Version: 1.0\r\n"
-                 . "Content-Type: text/plain; charset=UTF-8\r\n"
-                 . 'Date: ' . date('r') . "\r\n";
-        $delivered = (bool)@mail($to, $subject, $body, $headers);
-    }
+    $html = nl2br(e($body));
+    $delivered = email_transporter($to, $subject, $html, $body);
 
     // Trace systématique : l'email reste consultable même sans SMTP
     email_store($to, $subject, $body, $delivered);
@@ -473,35 +467,11 @@ function send_email(string $to, string $subject, string $body): bool
 }
 
 /**
- * Vrai si le dernier envoi a réellement été remis au transport mail().
+ * Vrai si le dernier envoi a réellement été remis au transport.
  */
 function last_mail_delivered(): bool
 {
     return !empty($GLOBALS['_mail_delivered']);
-}
-
-/**
- * Archive un email au format .eml dans storage/mail/ (boîte de démo).
- */
-function email_store(string $to, string $subject, string $body, bool $delivered): void
-{
-    $dir = ROOT_PATH . 'storage/mail';
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0775, true);
-    }
-    if (!is_dir($dir) || !is_writable($dir)) return;
-
-    $raw  = 'Date: ' . date('r') . "\r\n";
-    $raw .= 'To: ' . $to . "\r\n";
-    $raw .= 'From: ' . MAIL_FROM_NAME . ' <' . MAIL_FROM . ">\r\n";
-    $raw .= 'Subject: ' . str_replace(["\r", "\n"], '', $subject) . "\r\n";
-    $raw .= 'X-MySchool-Status: ' . ($delivered ? 'sent' : 'local') . "\r\n";
-    $raw .= "MIME-Version: 1.0\r\n";
-    $raw .= "Content-Type: text/plain; charset=UTF-8\r\n";
-    $raw .= "\r\n" . $body . "\r\n";
-
-    $file = $dir . '/' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.eml';
-    @file_put_contents($file, $raw);
 }
 
 /**

@@ -67,16 +67,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         )->fetch();
         if ((int)($eleve_ok['nb'] ?? 0) === 0) continue;
 
-        prepareQuery(
+        $presence = prepareQuery(
             "INSERT INTO presences (eleve_id, prof_id, date_presence, statut, motif)
             VALUES (:eid, :pid, :date, :statut, :motif)
             ON CONFLICT (eleve_id, date_presence)
-            DO UPDATE SET statut = EXCLUDED.statut, motif = EXCLUDED.motif, prof_id = EXCLUDED.prof_id",
+            DO UPDATE SET statut = EXCLUDED.statut, motif = EXCLUDED.motif, prof_id = EXCLUDED.prof_id
+            RETURNING id",
             [
                 'eid'=>$eid, 'pid'=>$prof_id, 'date'=>$date_p,
                 'statut'=>$statut, 'motif'=>$motif
             ]
-        );
+        )->fetch();
+
+        if ($presence && in_array($statut, ['absent', 'retard'], true)) {
+            notifier_presence((int)$presence['id'], $eid, $date_p, $statut, $motif);
+        }
     }
 
     log_activity('presences.saisie', "Présences saisies matière #{$m_id}, date={$date_p}");

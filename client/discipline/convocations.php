@@ -52,13 +52,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $canManage) {
         } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d['date_convocation'])) {
             $error = 'Date invalide.';
         } else {
-            prepareQuery(
+            $convocation = prepareQuery(
                 'INSERT INTO convocations (eleve_id, incident_id, date_convocation, heure, motif, statut, cree_par)
-                 VALUES (:e, :inc, :dc, :h, :m, :st, :uid)',
+                 VALUES (:e, :inc, :dc, :h, :m, :st, :uid)
+                 RETURNING id',
                 ['e'=>$d['eleve_id'],'inc'=>($d['incident_id'] ?: null),'dc'=>$d['date_convocation'],
                  'h'=>($d['heure'] ?: null),'m'=>$d['motif'],
                  'st'=>(array_key_exists($d['statut'], $statuts) ? $d['statut'] : 'prevue'),'uid'=>current_user()['id']]
-            );
+            )->fetch();
+
+            if ($convocation) {
+                notifier_convocation(
+                    (int)$convocation['id'],
+                    (int)$d['eleve_id'],
+                    $d['date_convocation'],
+                    $d['heure'] ?: null,
+                    $d['motif']
+                );
+            }
             log_activity('discipline.convocation_create', 'Convocation élève #' . $d['eleve_id']);
             set_flash('success', 'Convocation enregistrée.');
             header('Location: convocations.php');

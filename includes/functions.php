@@ -1183,3 +1183,7 @@ function communications_where_eleve(?int $classeId, string $alias = ''): string
     }
     return $sql . ')';
 }
+
+// Notifications par email (file d'attente, modèles, évènements métier).
+// Chargé en dernier : ce fichier utilise les fonctions définies ci-dessus.
+require_once __DIR__ . '/email_notifications.php';

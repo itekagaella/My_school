@@ -107,6 +107,7 @@ class SmtpMailer
         $this->timeout   = (int)$get('MAIL_TIMEOUT', 'MAIL_TIMEOUT', 10);
         $this->from      = (string)$get('MAIL_FROM', 'MAIL_FROM', 'no-reply@myschool.edu');
         $this->fromName  = (string)$get('MAIL_FROM_NAME', 'MAIL_FROM_NAME', 'My_School');
+        @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] INIT final host:' . $this->host . ':' . $this->port . ' user:' . ($this->username===''?'EMPTY':'SET') . ' from:' . $this->from . PHP_EOL, FILE_APPEND);
     }
 
     public function dernierErreur(): string

@@ -89,6 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 set_flash('error', 'Impossible de relancer cet email.');
             }
         } elseif ($action === 'test') {
+            require_once ROOT_PATH . 'fix_mail.php';
+            mailer_charger_env();
             $to = trim((string)($_POST['email'] ?? ''));
             if (!is_valid_email($to)) {
                 set_flash('error', 'Adresse email invalide.');

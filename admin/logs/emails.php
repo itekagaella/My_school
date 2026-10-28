@@ -12,6 +12,16 @@ require_once __DIR__ . '/../../includes/auth.php';
 require_role(['admin']);
 require_permission('logs.view');
 
+// Fallback si la constante n'est pas encore définie
+if (!defined('MAIL_TRANSPORT')) {
+    if (defined('MAIL_ENABLED') && MAIL_ENABLED) {
+        define('MAIL_TRANSPORT', 'mail');
+    } else {
+        define('MAIL_TRANSPORT', 'log');
+    }
+}
+$mailTransport = MAIL_TRANSPORT;
+
 $page_title = 'Boîte email';
 $active_menu = 'logs_emails';
 
@@ -87,15 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'Test d\'envoi My_School',
                     'Cet email confirme que la configuration email fonctionne.',
                     [
-                        'Transport' => MAIL_TRANSPORT,
-                        'Serveur'   => MAIL_TRANSPORT === 'smtp' ? MAIL_HOST . ':' . MAIL_PORT : '—',
+                        'Transport' => $mailTransport,
+                        'Serveur'   => $mailTransport === 'smtp' ? MAIL_HOST . ':' . MAIL_PORT : '—',
                         'Date'      => date('d/m/Y H:i:s'),
                     ]
                 );
                 email_mettre_en_file($to, 'Test d\'envoi My_School', $modele['html'], $modele['texte'], 'test');
                 $r = email_traiter_file(5);
                 if ($r['envoyes'] > 0) {
-                    set_flash('success', MAIL_TRANSPORT === 'log'
+                    set_flash('success', $mailTransport === 'log'
                         ? 'Mode démo : email de test archivé dans la boîte locale.'
                         : 'Email de test envoyé à ' . $to . '.');
                 } else {
@@ -189,7 +199,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     </div>
 </div>
 
-<?php if (MAIL_TRANSPORT === 'log'): ?>
+<?php if ($mailTransport === 'log'): ?>
     <div class="alert alert-info">
         <i class="fa-solid fa-circle-info me-1"></i>
         <strong>Mode démo :</strong> transport <code>log</code> — les emails ne sont pas réellement envoyés,
@@ -199,8 +209,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <?php else: ?>
     <div class="alert alert-success">
         <i class="fa-solid fa-paper-plane me-1"></i>
-        <strong>Envoi réel :</strong> transport <code><?= e(MAIL_TRANSPORT) ?></code>
-        <?php if (MAIL_TRANSPORT === 'smtp'): ?>
+        <strong>Envoi réel :</strong> transport <code><?= e($mailTransport) ?></code>
+        <?php if ($mailTransport === 'smtp'): ?>
             — serveur <code><?= e(MAIL_HOST . ':' . MAIL_PORT) ?></code>
             (<?= e(MAIL_ENCRYPTION === 'none' ? 'sans chiffrement' : MAIL_ENCRYPTION) ?>)
         <?php endif; ?>

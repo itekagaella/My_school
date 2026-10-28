@@ -677,6 +677,7 @@ function email_traiter_file(int $limite = 20): array
                 $erreur = $mailer->dernierErreur();
             }
         } else {
+            mailer_charger_env();
             $ok = email_transporter(
                 (string)$ligne['destinataire'],
                 (string)$ligne['sujet'],

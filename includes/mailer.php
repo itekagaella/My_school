@@ -380,7 +380,8 @@ function email_store(string $to, string $subject, string $body, bool $delivered,
  */
 function email_transporter(string $to, string $subject, string $html, string $text = ''): bool
 {
-    if (MAIL_TRANSPORT === 'smtp') {
+    mailer_charger_env();
+    if (defined('MAIL_TRANSPORT') ? MAIL_TRANSPORT === 'smtp' : (getenv('MAIL_TRANSPORT') === 'smtp')) {
         $mailer = new SmtpMailer();
         $ok = $mailer->envoyer($to, $subject, $html, $text);
         if (!$ok) {

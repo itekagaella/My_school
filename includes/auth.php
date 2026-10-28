@@ -456,6 +456,7 @@ function reset_password(string $token, string $newPassword): array
 
 function send_email(string $to, string $subject, string $body): bool
 {
+    mailer_charger_env();
     $html = nl2br(e($body));
     $delivered = email_transporter($to, $subject, $html, $body);
 

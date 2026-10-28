@@ -67,6 +67,7 @@ if (!function_exists('mailer_charger_env')) {
     }
 }
 
+if (!class_exists('SmtpMailer')) {
 class SmtpMailer
 {
     private $socket = null;
@@ -404,5 +405,6 @@ function email_transporter(string $to, string $subject, string $html, string $te
     }
 
     return false;
+}
 }
 }

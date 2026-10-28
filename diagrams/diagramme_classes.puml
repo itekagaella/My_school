@@ -1,0 +1,254 @@
+@startuml My_School_Classes
+
+title Diagramme de Classes - My_School (Système de Gestion Scolaire)
+
+' Packages
+package "Authentification" {
+  class Utilisateur {
+    +id: int
+    +nom: string
+    +prenom: string
+    +email: string
+    +password_hash: string
+    +role: enum(admin,eleve,prof,personnel,surveillant,finance,discipline)
+    +actif: boolean
+    +deux_facteurs: boolean
+    +derniere_connexion: timestamp
+    +se_connecter()
+    +se_deconnecter()
+  }
+  
+  class Role {
+    +id: int
+    +nom_role: string
+    +description: string
+  }
+  
+  class Permission {
+    +id: int
+    +nom_permission: string
+    +description: string
+  }
+}
+
+package "Pédagogie" {
+  class Eleve {
+    +id: int
+    +matricule: string
+    +nom: string
+    +prenom: string
+    +date_naissance: date
+    +sexe: enum(M,F)
+    +parent_nom: string
+    +parent_tel: string
+    +statut: enum(actif,inactif,archive)
+    +consulter_notes()
+    +consulter_horaires()
+    +consulter_absences()
+  }
+  
+  class Prof {
+    +id: int
+    +matricule: string
+    +nom: string
+    +prenom: string
+    +specialite: string
+    +tel: string
+    +saisir_notes()
+    +gerer_presences()
+  }
+  
+  class Classe {
+    +id: int
+    +nom_classe: string
+    +niveau: string
+    +section: string
+    +annee_scolaire: string
+    +capacite: int
+    +obtenir_effectif()
+  }
+  
+  class Matiere {
+    +id: int
+    +code_matiere: string
+    +nom_matiere: string
+    +coefficient: decimal
+    +niveau_cible: string
+  }
+  
+  class Horaire {
+    +id: int
+    +jour: enum(lundi,mardi,mercredi,jeudi,vendredi,samedi)
+    +heure_debut: time
+    +heure_fin: time
+    +salle: string
+    +statut: enum(brouillon,publie,annule)
+    +annee_scolaire: string
+  }
+  
+  class Note {
+    +id: int
+    +note: decimal(4,2)
+    +type_evaluation: enum(interrogation,controle,devoir,composition)
+    +periode: string
+    +coefficient: decimal
+    +date_evaluation: date
+    +observation: text
+  }
+  
+  class Presence {
+    +id: int
+    +date_presence: date
+    +statut: enum(present,absent,retard,justifie)
+    +heure_arrivee: time
+    +motif: text
+    +justifie: boolean
+  }
+}
+
+package "Finances" {
+  class FraisScolaire {
+    +id: int
+    +libelle: string
+    +montant: decimal(12,2)
+    +niveau: string
+    +annee_scolaire: string
+    +obligatoire: boolean
+    +actif: boolean
+  }
+  
+  class Paiement {
+    +id: int
+    +montant: decimal(12,2)
+    +periode: string
+    +date_paiement: date
+    +mode_paiement: enum(especes)
+    +recu_numero: string
+    +observation: text
+    +enregistrer_paiement()
+    +generer_recu()
+  }
+}
+
+package "Discipline" {
+  class IncidentDiscipline {
+    +id: int
+    +date_incident: date
+    +type_incident: string
+    +gravite: enum(faible,moyenne,grave)
+    +description: text
+    +lieu: string
+    +statut: enum(ouvert,traite,clos)
+    +signaler()
+  }
+  
+  class Sanction {
+    +id: int
+    +type_sanction: string
+    +description: text
+    +date_debut: date
+    +date_fin: date
+    +statut: enum(active,terminee,annulee)
+    +prononcer()
+  }
+  
+  class Convocation {
+    +id: int
+    +date_convocation: datetime
+    +lieu: string
+    +motif: text
+    +statut: enum(envoyee,vue,traitee)
+  }
+}
+
+package "Communication" {
+  class Communication {
+    +id: int
+    +titre: string
+    +contenu: text
+    +type: enum(general,classe,individuel)
+    +destinataires: json
+    +date_envoi: timestamp
+    +priorite: enum(normale,importante,urgente)
+    +envoyer()
+  }
+  
+  class Document {
+    +id: int
+    +titre: string
+    +fichier: string
+    +type_fichier: string
+    +taille: int
+    +categorie: string
+    +partage_public: boolean
+    +telecharger()
+  }
+  
+  class Club {
+    +id: int
+    +nom_club: string
+    +description: text
+    +responsable: string
+    +actif: boolean
+    +inscrire()
+  }
+}
+
+' Relations
+Utilisateur "1" -- "0..1" Eleve
+Utilisateur "1" -- "0..1" Prof
+Role "1" -- "*" Permission : associe
+Utilisateur "*" -- "1" Role
+
+Classe "1" -- "*" Eleve
+Eleve "*" -- "1" Classe
+Prof "*" -- "*" Matiere
+Classe "*" -- "*" Matiere
+Horaire "*" -- "1" Classe
+Horaire "*" -- "1" Matiere
+Horaire "*" -- "1" Prof
+Horaire "*" -- "1" Salle
+
+Note "*" -- "1" Eleve
+Note "*" -- "1" Matiere
+Note "*" -- "1" Prof
+
+Presence "*" -- "1" Eleve
+Presence "*" -- "1" Horaire
+Presence "*" -- "1" Prof
+
+Eleve "1" -- "*" Paiement
+FraisScolaire "1" -- "*" Paiement
+Utilisateur "1" -- "*" Paiement : enregistre_par
+
+Eleve "1" -- "*" IncidentDiscipline
+Utilisateur "1" -- "*" IncidentDiscipline : signale_par
+IncidentDiscipline "1" -- "0..1" Sanction
+Eleve "1" -- "*" Sanction
+Eleve "1" -- "*" Convocation
+Utilisateur "1" -- "*" Convocation
+
+Communication "*" -- "1" Utilisateur : expediteur
+Eleve "*" -- "*" Club
+Document "*" -- "1" Utilisateur : upload_par
+
+class Salle {
+  +id: int
+  +numero: int
+  +nom: string
+  +type: enum(classe,administratif)
+  +actif: boolean
+}
+
+class Personnel {
+  +id: int
+  +matricule: string
+  +nom: string
+  +prenom: string
+  +fonction: string
+  +statut: enum(actif,inactif,archive)
+}
+
+Utilisateur "1" -- "0..1" Personnel
+
+@enduml

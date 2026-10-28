@@ -1,0 +1,174 @@
+@startuml My_School_Use_Cases
+
+title Diagramme de Cas d'Utilisation - My_School
+
+left to right direction
+
+actor Administrateur as Admin
+actor Professeur as Prof
+actor Surveillant as Surv
+actor "Gestionnaire Financier" as Finance
+actor "Responsable Discipline" as Disc
+actor Élève as Eleve
+actor Personnel as Pers
+
+rectangle "Système My_School" {
+  ' Authentification
+  package "Authentification & Sécurité" {
+    usecase "S'authentifier" as UC_Auth
+    usecase "Activer/Désactiver 2FA" as UC_2FA
+    usecase "Réinitialiser mot de passe" as UC_Reset
+    usecase "Gérer sessions" as UC_Sessions
+  }
+  
+  ' Administration
+  package "Administration" {
+    usecase "Gérer utilisateurs" as UC_Users
+    usecase "Gérer rôles/permissions" as UC_Roles
+    usecase "Gérer classes" as UC_Classes
+    usecase "Gérer matières" as UC_Matieres
+    usecase "Gérer paramètres" as UC_Params
+    usecase "Gérer thèmes" as UC_Themes
+    usecase "Sauvegarder/Restaurer" as UC_Backup
+    usecase "Consulter journal activités" as UC_Log
+  }
+  
+  ' Pédagogie
+  package "Pédagogie" {
+    usecase "Gérer emplois du temps" as UC_Horaires
+    usecase "Saisir notes" as UC_Notes
+    usecase "Consulter notes" as UC_VoirNotes
+    usecase "Saisir présences" as UC_Presences
+    usecase "Consulter présences" as UC_VoirPres
+    usecase "Gérer élèves" as UC_Eleves
+    usecase "Gérer professeurs" as UC_Profs
+  }
+  
+  ' Finances
+  package "Finances" {
+    usecase "Définir frais scolaires" as UC_Frais
+    usecase "Enregistrer paiements" as UC_Paiements
+    usecase "Générer reçus" as UC_Recu
+    usecase "Consulter soldes" as UC_Soldes
+    usecase "Générer rapports financiers" as UC_RapportFin
+  }
+  
+  ' Discipline
+  package "Discipline" {
+    usecase "Signaler incident" as UC_Incident
+    usecase "Gérer incidents" as UC_GererInc
+    usecase "Prononcer sanctions" as UC_Sanction
+    usecase "Gérer convocations" as UC_Convoc
+  }
+  
+  ' Communication & Autres
+  package "Communication" {
+    usecase "Envoyer communications" as UC_Com
+    usecase "Gérer documents" as UC_Docs
+    usecase "Partager documents" as UC_Partage
+    usecase "Télécharger documents" as UC_Telecharger
+    usecase "Gérer clubs" as UC_Clubs
+    usecase "Utiliser chat interne" as UC_Chat
+    usecase "Gérer notifications" as UC_Notif
+  }
+  
+  ' Rapports
+  package "Rapports & Exports" {
+    usecase "Exporter PDF" as UC_PDF
+    usecase "Exporter Excel/XLSX" as UC_XLSX
+    usecase "Statistiques tableau de bord" as UC_Stats
+  }
+}
+
+' Relations Admin
+Admin --> UC_Auth
+Admin --> UC_Users
+Admin --> UC_Roles
+Admin --> UC_Classes
+Admin --> UC_Matieres
+Admin --> UC_Horaires
+Admin --> UC_Eleves
+Admin --> UC_Profs
+Admin --> UC_Params
+Admin --> UC_Themes
+Admin --> UC_Backup
+Admin --> UC_Log
+Admin --> UC_Com
+Admin --> UC_Docs
+Admin --> UC_Stats
+Admin --> UC_PDF
+Admin --> UC_XLSX
+Admin --> UC_Frais
+Admin --> UC_Paiements
+Admin --> UC_RapportFin
+Admin --> UC_GererInc
+Admin --> UC_Sanction
+Admin --> UC_Convoc
+
+' Relations Prof
+Prof --> UC_Auth
+Prof --> UC_Notes
+Prof --> UC_VoirNotes
+Prof --> UC_Presences
+Prof --> UC_VoirPres
+Prof --> UC_Horaires
+Prof --> UC_Com
+Prof --> UC_Docs
+Prof --> UC_Chat
+
+' Relations Surveillant
+Surv --> UC_Auth
+Surv --> UC_Presences
+Surv --> UC_VoirPres
+Surv --> UC_Incident
+Surv --> UC_VoirPres
+Surv --> UC_Horaires
+Surv --> UC_Eleves
+
+' Relations Finance
+Finance --> UC_Auth
+Finance --> UC_Frais
+Finance --> UC_Paiements
+Finance --> UC_Recu
+Finance --> UC_Soldes
+Finance --> UC_RapportFin
+Finance --> UC_Eleves
+Finance --> UC_PDF
+Finance --> UC_XLSX
+
+' Relations Discipline
+Disc --> UC_Auth
+Disc --> UC_Incident
+Disc --> UC_GererInc
+Disc --> UC_Sanction
+Disc --> UC_Convoc
+Disc --> UC_Eleves
+Disc --> UC_Com
+
+' Relations Eleve
+Eleve --> UC_Auth
+Eleve --> UC_VoirNotes
+Eleve --> UC_VoirPres
+Eleve --> UC_Horaires
+Eleve --> UC_Soldes
+Eleve --> UC_Docs
+Eleve --> UC_Telecharger
+Eleve --> UC_Com
+Eleve --> UC_Clubs
+Eleve --> UC_Chat
+Eleve --> UC_Notif
+
+' Relations Personnel
+Pers --> UC_Auth
+Pers --> UC_Com
+Pers --> UC_Docs
+Pers --> UC_Chat
+
+' Includes/Extends
+UC_Paiements ..> UC_Recu : <<include>>
+UC_Notes ..> UC_Auth : <<include>>
+UC_SaisirNotes ..> UC_Notes
+UC_GererInc ..> UC_Incident
+UC_Sanction ..> UC_GererInc : <<extend>>
+
+@enduml

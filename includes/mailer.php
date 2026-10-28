@@ -109,7 +109,67 @@ class SmtpMailer
         $this->timeout   = (int)$get('MAIL_TIMEOUT', 'MAIL_TIMEOUT', 10);
         $this->from      = (string)$get('MAIL_FROM', 'MAIL_FROM', 'no-reply@myschool.edu');
         $this->fromName  = (string)$get('MAIL_FROM_NAME', 'MAIL_FROM_NAME', 'My_School');
-        @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] INIT final host:' . $this->host . ':' . $this->port . ' user:' . ($this->username===''?'EMPTY':'SET') . ' from:' . $this->from . PHP_EOL, FILE_APPEND);
+
+        // Dernier recours : lire directement depuis .env si encore vide
+        if ($this->username === '' || $this->password === '') {
+            $envFiles = [];
+            if (defined('ROOT_PATH')) {
+                $envFiles[] = rtrim(ROOT_PATH, '/\\') . '/.env';
+            }
+            $envFiles[] = __DIR__ . '/../.env';
+            foreach ($envFiles as $envFile) {
+                if (!is_file($envFile)) {
+                    continue;
+                }
+                $lines = @file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                if (!$lines) {
+                    continue;
+                }
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if ($line === '' || $line[0] === '#') {
+                        continue;
+                    }
+                    $pos = strpos($line, '=');
+                    if ($pos === false) {
+                        continue;
+                    }
+                    $key = trim(substr($line, 0, $pos));
+                    $val = trim(substr($line, $pos + 1));
+                    if (strlen($val) >= 2) {
+                        $first = $val[0];
+                        $last = $val[strlen($val) - 1];
+                        if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                            $val = substr($val, 1, -1);
+                        }
+                    }
+                    if ($key === 'MAIL_USERNAME' && $this->username === '') {
+                        $this->username = $val;
+                    }
+                    if ($key === 'MAIL_PASSWORD' && $this->password === '') {
+                        $this->password = $val;
+                    }
+                    if ($key === 'MAIL_HOST' && $this->host === '') {
+                        $this->host = $val;
+                    }
+                    if ($key === 'MAIL_PORT' && ($this->port === 0 || $this->port === 1025)) {
+                        $this->port = (int)$val;
+                    }
+                    if ($key === 'MAIL_ENCRYPTION' && $this->encryption === 'none') {
+                        $this->encryption = strtolower($val);
+                    }
+                    if ($key === 'MAIL_FROM' && $this->from === 'no-reply@myschool.edu') {
+                        $this->from = $val;
+                    }
+                    if ($key === 'MAIL_FROM_NAME' && $this->fromName === 'My_School') {
+                        $this->fromName = $val;
+                    }
+                }
+                break;
+            }
+        }
+
+        @file_put_contents(ROOT_PATH . 'storage/mail/smtp_debug.log', '[' . date('Y-m-d H:i:s') . '] INIT final host:' . $this->host . ':' . $this->port . ' user:' . ($this->username===''?'EMPTY':'SET') . ' pass:' . ($this->password===''?'EMPTY':'SET') . ' from:' . $this->from . PHP_EOL, FILE_APPEND);
     }
 
     public function dernierErreur(): string

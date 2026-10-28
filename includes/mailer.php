@@ -13,6 +13,60 @@
  * (code 2FA, lien de réinitialisation).
  */
 
+if (!function_exists('mailer_charger_env')) {
+    function mailer_charger_env(): void
+    {
+        static $done = false;
+        if ($done) {
+            return;
+        }
+        $done = true;
+
+        $envFile = null;
+        if (defined('ROOT_PATH')) {
+            $envFile = rtrim(ROOT_PATH, '/\\') . '/.env';
+        }
+        if (!$envFile || !is_file($envFile)) {
+            $envFile = __DIR__ . '/../.env';
+        }
+        if (!is_file($envFile)) {
+            return;
+        }
+
+        $lines = @file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!$lines) {
+            return;
+        }
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || $line[0] === '#') {
+                continue;
+            }
+            $pos = strpos($line, '=');
+            if ($pos === false) {
+                continue;
+            }
+            $key = trim(substr($line, 0, $pos));
+            $val = trim(substr($line, $pos + 1));
+            if (strlen($val) >= 2) {
+                $first = $val[0];
+                $last = $val[strlen($val) - 1];
+                if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
+                    $val = substr($val, 1, -1);
+                }
+            }
+            if ($key === '') {
+                continue;
+            }
+            if (getenv($key) === false && !array_key_exists($key, $_ENV)) {
+                @putenv($key . '=' . $val);
+                $_ENV[$key] = $val;
+            }
+        }
+    }
+}
+
 class SmtpMailer
 {
     private $socket = null;
@@ -28,6 +82,7 @@ class SmtpMailer
 
     public function __construct(array $config = [])
     {
+        mailer_charger_env();
         $get = function($key, $const, $default) use ($config) {
             if (isset($config[$key]) && $config[$key] !== '') return $config[$key];
             if (defined($const) && constant($const) !== '') return constant($const);

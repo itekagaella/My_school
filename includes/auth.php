@@ -457,14 +457,29 @@ function reset_password(string $token, string $newPassword): array
 function send_email(string $to, string $subject, string $body): bool
 {
     mailer_charger_env();
+    if (!function_exists('email_mettre_en_file')) {
+        require_once __DIR__ . '/email_notifications.php';
+    }
+
     $html = nl2br(e($body));
-    $delivered = email_transporter($to, $subject, $html, $body);
+    $texte = $body;
 
-    // Trace systématique : l'email reste consultable même sans SMTP
-    email_store($to, $subject, $body, $delivered);
+    // Tout passe par la file d'attente comme les autres notifications
+    $ok = email_mettre_en_file(
+        $to,
+        $subject,
+        $html,
+        $texte,
+        'auth',
+        null,
+        'auth:' . md5($to . '|' . $subject . '|' . microtime(true))
+    );
 
-    $GLOBALS['_mail_delivered'] = $delivered;
-    return $delivered;
+    // Trace dans la boîte locale
+    email_store($to, $subject, $body, (bool)$ok, $ok ? 'en_attente' : 'echec');
+
+    $GLOBALS['_mail_delivered'] = (bool)$ok;
+    return (bool)$ok;
 }
 
 /**

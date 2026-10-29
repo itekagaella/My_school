@@ -141,12 +141,12 @@ function client_menu_item(string $key, string $label, string $icon, string $href
         </button>
         <div class="topbar-title"><?= e($page_title ?? '') ?></div>
         <div class="topbar-actions ms-auto d-flex align-items-center">
-            <a href="<?= BASE_URL ?>api/notifications.php" class="btn position-relative me-3">
+            <a href="<?= BASE_URL ?>api/notifications.php" class="btn position-relative">
                 <i class="fa-solid fa-bell"></i>
                 <?php if ($nb_notif > 0): ?><span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"><?= $nb_notif ?></span><?php endif; ?>
             </a>
             <a href="<?= BASE_URL ?>client/profil/index.php" class="btn">
-                <i class="fa-solid fa-user"></i> <span class="d-none d-md-inline"><?= e($user['prenom']) ?></span>
+                <i class="fa-solid fa-user"></i>
             </a>
             <a href="<?= BASE_URL ?>logout.php" class="btn" title="Déconnexion">
                 <i class="fa-solid fa-right-from-bracket"></i>

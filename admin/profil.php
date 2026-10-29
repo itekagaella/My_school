@@ -1,7 +1,17 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_login();
-$user = current_user();
+$current = current_user();
+
+// Si un admin veut modifier un autre utilisateur, rediriger vers la page d'édition dédiée
+if (isset($_GET['id']) && (int)$_GET['id'] > 0 && $current['role'] === 'admin') {
+    $targetId = (int)$_GET['id'];
+    if ($targetId !== (int)$current['id']) {
+        header('Location: users/edit.php?id=' . $targetId);
+        exit;
+    }
+}
+$user = $current;
 
 $page_title = 'Mon profil';
 $active_menu = 'profil';

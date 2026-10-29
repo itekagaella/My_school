@@ -13,6 +13,41 @@
 
 require_once __DIR__ . '/mailer.php';
 
+if (!function_exists('email_declencher_traitement_async')) {
+    function email_declencher_traitement_async(): void
+    {
+        static $declenche = false;
+        if ($declenche) {
+            return;
+        }
+        $declenche = true;
+
+        @ignore_user_abort(true);
+        @set_time_limit(0);
+
+        if (function_exists('fastcgi_finish_request')) {
+            @fastcgi_finish_request();
+        }
+
+        $php = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
+        $script = defined('ROOT_PATH') ? (ROOT_PATH . 'bin/envoyer_emails.php') : (__DIR__ . '/../bin/envoyer_emails.php');
+
+        if (!is_file($script)) {
+            return;
+        }
+
+        $isWindows = strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+        if ($isWindows) {
+            $cmd = 'start /B "" ' . escapeshellarg($php) . ' ' . escapeshellarg($script) . ' > NUL 2>&1';
+            @pclose(@popen($cmd, 'r'));
+            return;
+        }
+
+        $cmd = escapeshellarg($php) . ' ' . escapeshellarg($script) . ' > /dev/null 2>&1 &';
+        @pclose(@popen($cmd, 'r'));
+    }
+}
+
 /**
  * Une catégorie est active par défaut ; une ligne dans preferences_email
  * avec actif = FALSE la désactive.
@@ -77,6 +112,9 @@ function email_mettre_en_file(
         error_log('[email] Mise en file impossible : ' . $e->getMessage());
         return false;
     }
+
+    email_declencher_traitement_async();
+    return true;
 }
 
 /**

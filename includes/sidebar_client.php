@@ -39,18 +39,20 @@ function client_menu_item(string $key, string $label, string $icon, string $href
     </div>
 
     <div class="sidebar-user">
-        <div class="user-avatar">
-            <?php $avatarUrl = photo_profil_url($user['avatar'] ?? null); ?>
-            <?php if ($avatarUrl): ?>
-                <img src="<?= e($avatarUrl) ?>" alt="avatar">
-            <?php else: ?>
-                <span><?= strtoupper(mb_substr($user['prenom'] ?? 'A', 0, 1) . mb_substr($user['nom'] ?? 'D', 0, 1)) ?></span>
-            <?php endif; ?>
-        </div>
-        <div class="user-info">
-            <span class="user-name"><?= e($user['prenom'] . ' ' . $user['nom']) ?></span>
-            <span class="user-role"><i class="fa-solid <?= $role_icon[$role] ?>"></i> <?= $role_label[$role] ?></span>
-        </div>
+        <a href="<?= BASE_URL ?>client/profil/index.php" class="d-flex align-items-center text-decoration-none text-white w-100">
+            <div class="user-avatar">
+                <?php $avatarUrl = photo_profil_url($user['avatar'] ?? null); ?>
+                <?php if ($avatarUrl): ?>
+                    <img src="<?= e($avatarUrl) ?>" alt="avatar">
+                <?php else: ?>
+                    <span><?= strtoupper(mb_substr($user['prenom'] ?? 'A', 0, 1) . mb_substr($user['nom'] ?? 'D', 0, 1)) ?></span>
+                <?php endif; ?>
+            </div>
+            <div class="user-info">
+                <span class="user-name"><?= e($user['prenom'] . ' ' . $user['nom']) ?></span>
+                <span class="user-role"><i class="fa-solid <?= $role_icon[$role] ?>"></i> <?= $role_label[$role] ?></span>
+            </div>
+        </a>
     </div>
 
     <nav class="sidebar-nav">

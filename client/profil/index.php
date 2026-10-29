@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_login();
-if (current_role() === 'admin') { header('Location: ' . BASE_URL . 'admin/index.php'); exit; }
 $user = current_user();
 $page_title = 'Mon profil';
 $active_menu = 'profil';

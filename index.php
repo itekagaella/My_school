@@ -11,7 +11,10 @@ $logoIndex = logo_etablissement_url();
 
 // Si déjà connecté, rediriger vers le bon espace
 if (is_logged_in()) {
-    $role = current_role();
+    $role = $_SESSION['user_role'] ?? current_role();
+    if (!$role) {
+        $role = current_role();
+    }
     header('Location: ' . BASE_URL . role_home((string)$role));
     exit;
 }

@@ -148,6 +148,15 @@ function start_user_session(int $userId): void
     $_SESSION['last_activity'] = time();
     $_SESSION['login_time'] = time();
 
+    // Sauvegarder le rôle pour éviter les redirections en boucle
+    try {
+        $ur = prepareQuery('SELECT role FROM utilisateurs WHERE id = :id', ['id' => $userId])->fetch();
+        if ($ur && !empty($ur['role'])) {
+            $_SESSION['user_role'] = $ur['role'];
+        }
+    } catch (Throwable $e) {
+    }
+
     // Enregistrer un token de session en base
     // L'expiration est calculée par PostgreSQL (NOW() + intervalle) car elle est
     // ensuite comparée à NOW() : mélanger date() PHP et NOW() SQL rend la session

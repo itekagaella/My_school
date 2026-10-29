@@ -46,6 +46,7 @@ if (is_logged_in()) header('Location: ' . BASE_URL);
                         header('Location: reset_password.php');
                         exit;
                     }
+                }
             }
         }
         ?>

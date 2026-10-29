@@ -110,6 +110,12 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
 
     // Si 2FA activée, générer et stocker le code OTP dans une session temporaire
     if ($user['deux_facteurs']) {
+        // Nettoyer les sessions potentiellement en conflit
+        unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['user_role']);
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_regenerate_id(true);
+        }
+
         $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $expires = date('Y-m-d H:i:s', time() + 300); // 5 min
         prepareQuery(

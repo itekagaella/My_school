@@ -481,11 +481,6 @@ function reset_password_with_otp(string $email, string $otp, string $newPassword
     unset($_SESSION['reset_user_id']);
     unset($_SESSION['reset_otp_sent_at']);
     unset($_SESSION['reset_link_demo']);
-    // Nettoyer toute session potentiellement corrompue après reset
-    unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['last_activity'], $_SESSION['login_time'], $_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        @session_regenerate_id(true);
-    }
     log_activity('auth.password_reset', 'Mot de passe réinitialisé par OTP');
     return [true, 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.'];
 }

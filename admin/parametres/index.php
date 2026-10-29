@@ -66,11 +66,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <div class="card">
             <div class="card-header"><i class="fa-solid fa-palette me-2"></i>Apparence</div>
             <div class="card-body">
-                <p class="text-muted small">Choisissez un thème de couleurs pour l'interface.</p>
-<a href="theme.php?cle=theme&valeur=default&csrf_token=<?= e(csrf_token()) ?>" class="btn btn-sm btn-outline-secondary w-100 mb-2">Thème par défaut</a>
-<a href="theme.php?cle=theme&valeur=dark&csrf_token=<?= e(csrf_token()) ?>" class="btn btn-sm btn-outline-dark w-100 mb-2">Thème sombre</a>
-<a href="theme.php?cle=theme&valeur=blue&csrf_token=<?= e(csrf_token()) ?>" class="btn btn-sm btn-outline-primary w-100 mb-2">Thème bleu</a>
-<a href="theme.php?cle=theme&valeur=green&csrf_token=<?= e(csrf_token()) ?>" class="btn btn-sm btn-outline-success w-100 mb-2">Thème vert</a>
+                <p class="text-muted small">Gérez l'apparence de l'interface depuis la page dédiée aux thèmes.</p>
+                <a href="theme.php" class="btn btn-outline-primary w-100"><i class="fa-solid fa-paintbrush me-1"></i>Gérer les thèmes</a>
             </div>
         </div>
         <div class="card mt-3">

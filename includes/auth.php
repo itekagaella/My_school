@@ -119,6 +119,7 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
 
         // Envoyer le code par email (réel si MAIL_ENABLED, sinon boîte de démo)
         $_SESSION['pending_2fa'] = $user['id'];
+        $_SESSION['pending_2fa_user_role'] = $user['role'];
         $_SESSION['2fa_user_meta'] = ['nom' => $user['nom'], 'prenom' => $user['prenom'], 'email' => $user['email']];
         send_otp_email($user['email'], $user['nom'], $otp);
         // Sans SMTP, le code serait inconnu de l'utilisateur : on l'expose sur
@@ -207,7 +208,7 @@ function verify_2fa(string $code): array
         'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
         ['id' => $userId]
     );
-    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
+    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
 
     start_user_session($userId);
     return [true, 'Authentification à deux facteurs réussie.'];

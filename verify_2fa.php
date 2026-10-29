@@ -47,14 +47,18 @@ if (is_logged_in()) {
                     $result = verify_2fa($code);
                     if ($result[0]) {
                         set_flash('success', 'Authentification réussie.');
-                        $role = current_role();
+                        $role = $_SESSION['pending_2fa_user_role'] ?? current_role() ?? '';
                         $redirects = [
                             'admin' => 'admin/index.php',
                             'eleve' => 'client/eleve/index.php',
                             'prof'  => 'client/prof/index.php',
                             'personnel' => 'client/personnel/index.php',
+                            'surveillant' => 'client/surveillant/index.php',
+                            'finance' => 'client/finance/index.php',
+                            'discipline' => 'client/discipline/index.php',
                         ];
-                        header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+                        unset($_SESSION['pending_2fa_user_role']);
+                        header('Location: ' . BASE_URL . ($redirects[$role] ?? role_home($role)));
                         exit;
                     } else {
                         $error = $result[1];

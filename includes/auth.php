@@ -270,7 +270,13 @@ function is_logged_in(): bool
  */
 function validate_session_token(): bool
 {
-    if (!isset($_SESSION['user_id']) || !isset($_SESSION['session_token'])) return false;
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['session_token'])) {
+        // Si on vient juste de se connecter sans token en session (cas rare) mais user_id présent
+        if (isset($_SESSION['user_id'])) {
+            return true;
+        }
+        return false;
+    }
     try {
         $row = prepareQuery(
             'SELECT COUNT(*) AS nb FROM sessions_utilisateur

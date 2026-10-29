@@ -8,6 +8,7 @@ $active_menu = 'parametres';
 
 $cles = [
     'nom_etablissement' => 'Nom de l\'établissement',
+    'logo_etablissement' => 'Logo de l\'établissement (URL ou chemin relatif)',
     'annee_scolaire' => 'Année scolaire',
     'adresse_etablissement' => 'Adresse',
     'telephone_etablissement' => 'Téléphone',
@@ -20,9 +21,28 @@ $cles = [
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ?? null)) {
     foreach (array_keys($cles) as $cle) {
-        if (array_key_exists($cle, $_POST)) {
+        if (array_key_exists($cle, $_POST) && $cle !== 'logo_etablissement') {
             set_param($cle, trim($_POST[$cle]));
         }
+    }
+    // Upload du logo si fourni
+    if (isset($_FILES['logo_etablissement_upload']) && $_FILES['logo_etablissement_upload']['error'] === UPLOAD_ERR_OK) {
+        $f = $_FILES['logo_etablissement_upload'];
+        $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true)) {
+            $dir = __DIR__ . '/../../assets/uploads/logo/';
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            $name = 'logo_' . date('YmdHis') . '_' . uniqid() . '.' . $ext;
+            $dest = $dir . $name;
+            if (move_uploaded_file($f['tmp_name'], $dest)) {
+                $rel = 'assets/uploads/logo/' . $name;
+                set_param('logo_etablissement', $rel);
+            }
+        }
+    } elseif (array_key_exists('logo_etablissement', $_POST)) {
+        set_param('logo_etablissement', trim($_POST['logo_etablissement']));
     }
     log_activity('parametres.update', 'Mise à jour des paramètres système');
     set_flash('success', 'Paramètres enregistrés.');
@@ -40,7 +60,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <div class="card">
             <div class="card-header"><i class="fa-solid fa-gear me-2"></i>Paramètres généraux</div>
             <div class="card-body">
-                <form method="post" action="">
+                <form method="post" action="" enctype="multipart/form-data">
                     <?= csrf_field() ?>
                     <?php foreach ($cles as $cle => $label): ?>
                         <div class="mb-3">
@@ -52,6 +72,16 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                                 </select>
                             <?php elseif ($cle === 'annee_scolaire'): ?>
                                 <?= select_annee_scolaire('annee_scolaire', get_param($cle,''), ['class' => 'form-select']) ?>
+                            <?php elseif ($cle === 'logo_etablissement'): ?>
+                                <?php $logoPreview = logo_etablissement_url(); ?>
+                                <?php if ($logoPreview): ?>
+                                    <div class="mb-2">
+                                        <img src="<?= e($logoPreview) ?>" alt="Logo actuel" style="height:60px;max-width:200px;object-fit:contain;border:1px solid #eee;padding:4px;border-radius:8px;">
+                                    </div>
+                                <?php endif; ?>
+                                <input type="text" name="<?= e($cle) ?>" class="form-control mb-2" value="<?= e(get_param($cle,'')) ?>" placeholder="assets/uploads/logo/logo.png ou https://...">
+                                <input type="file" name="logo_etablissement_upload" class="form-control" accept="image/*,.svg">
+                                <small class="text-muted">Vous pouvez soit saisir un chemin/URL, soit uploader un fichier.</small>
                             <?php else: ?>
                                 <input type="text" name="<?= e($cle) ?>" class="form-control" value="<?= e(get_param($cle,'')) ?>">
                             <?php endif; ?>

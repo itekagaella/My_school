@@ -25,8 +25,12 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
 <aside class="sidebar sidebar-admin" id="sidebar">
     <div class="sidebar-header">
         <a href="<?= BASE_URL ?>admin/index.php" class="sidebar-brand">
-            <span class="grad-cap"><i class="fa-solid fa-graduation-cap"></i></span>
-            <span class="brand-text">My_School</span>
+            <?php $logoAdmin = logo_etablissement_url(); if ($logoAdmin): ?>
+                <img src="<?= e($logoAdmin) ?>" alt="Logo" class="brand-logo" style="height:36px;max-width:120px;object-fit:contain;margin-right:8px;">
+            <?php else: ?>
+                <span class="grad-cap"><i class="fa-solid fa-graduation-cap"></i></span>
+            <?php endif; ?>
+            <span class="brand-text"><?= e(nom_etablissement()) ?></span>
         </a>
         <button class="sidebar-toggle" id="sidebarToggle">
             <i class="fa-solid fa-bars"></i>

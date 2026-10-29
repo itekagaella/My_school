@@ -267,6 +267,24 @@ function get_param(string $cle, $default = null)
     }
 }
 
+function nom_etablissement(string $def = 'My_School'): string
+{
+    $nom = trim((string)get_param('nom_etablissement', $def));
+    return $nom === '' ? $def : $nom;
+}
+
+function logo_etablissement_url(): ?string
+{
+    $logo = trim((string)get_param('logo_etablissement', ''));
+    if ($logo === '') {
+        return null;
+    }
+    if (preg_match('#^https?://#i', $logo) || strpos($logo, '/') === 0) {
+        return $logo;
+    }
+    return BASE_URL . ltrim($logo, '/');
+}
+
 /**
  * Met à jour un paramètre système
  */

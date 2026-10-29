@@ -4,6 +4,10 @@
  * Redirige vers le bon tableau de bord selon le rôle
  */
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/functions.php';
+
+$nomEtabIndex = nom_etablissement();
+$logoIndex = logo_etablissement_url();
 
 // Si déjà connecté, rediriger vers le bon espace
 if (is_logged_in()) {
@@ -17,7 +21,7 @@ if (is_logged_in()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Connexion - My_School</title>
+    <title>Connexion - <?= e($nomEtabIndex) ?></title>
     <!-- Google Fonts : Plus Jakarta Sans (local) -->
     <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
     <!-- Font Awesome (local) -->
@@ -28,8 +32,8 @@ if (is_logged_in()) {
 <body class="auth-page">
     <div class="auth-card">
         <div class="auth-brand">
-            <div class="logo-circle"><i class="fa-solid fa-graduation-cap"></i></div>
-            <h1>My_School</h1>
+            <div class="logo-circle"><?php if ($logoIndex): ?><img src="<?= e($logoIndex) ?>" alt="Logo" style="height:60px;max-width:200px;object-fit:contain;border-radius:12px;"><?php else: ?><i class="fa-solid fa-graduation-cap"></i><?php endif; ?></div>
+            <h1><?= e($nomEtabIndex) ?></h1>
             <p>Système de Gestion Scolaire</p>
         </div>
 

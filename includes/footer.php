@@ -9,7 +9,7 @@
     <script src="<?= BASE_URL ?>assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"></script>
     <footer class="app-footer">
         <div class="container text-center py-3">
-            <span>&copy; <?= date('Y') ?> <strong>My_School</strong> - Système de Gestion Scolaire. Tous droits réservés.</span>
+            <span>&copy; <?= date('Y') ?> <strong><?= e(nom_etablissement()) ?></strong> - Système de Gestion Scolaire. Tous droits réservés.</span>
         </div>
     </footer>
 </body>

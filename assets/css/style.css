@@ -104,6 +104,13 @@ a:hover { color: var(--primary-dark); }
     margin-bottom: 14px;
     box-shadow: 0 12px 24px -8px rgba(16,94,81,.4);
 }
+.auth-brand .auth-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    min-height: 70px;
+}
 .auth-brand h1 {
     font-size: 26px;
     font-weight: 800;

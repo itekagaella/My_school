@@ -32,7 +32,7 @@ if (is_logged_in()) {
 <body class="auth-page">
     <div class="auth-card">
         <div class="auth-brand">
-            <div class="logo-circle"><?php if ($logoIndex): ?><img src="<?= e($logoIndex) ?>" alt="Logo" style="height:60px;max-width:200px;object-fit:contain;border-radius:12px;"><?php else: ?><i class="fa-solid fa-graduation-cap"></i><?php endif; ?></div>
+            <div class="auth-logo"><?php if ($logoIndex): ?><img src="<?= e($logoIndex) ?>" alt="Logo" style="height:70px;max-width:240px;object-fit:contain;"><?php else: ?><i class="fa-solid fa-graduation-cap"></i><?php endif; ?></div>
             <h1><?= e($nomEtabIndex) ?></h1>
             <p>Système de Gestion Scolaire</p>
         </div>

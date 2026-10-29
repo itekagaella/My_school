@@ -573,10 +573,19 @@ function demo_disclose(): bool
 
 function send_otp_email(string $to, string $name, string $otp): void
 {
+    mailer_charger_env();
+    if (!function_exists('email_transporter')) {
+        require_once __DIR__ . '/mailer.php';
+    }
+
     $subject = 'Code de vérification My_School';
-    $body = "Bonjour {$name},\n\nVotre code de vérification est : {$otp}\n" .
-            "Ce code expire dans 5 minutes.\n\nMy_School";
-    send_email($to, $subject, $body);
+    $body = "Bonjour " . trim($name) . ",\n\nVotre code de vérification est : {$otp}\n" .
+            "Ce code expire dans 5 minutes.\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\nMy_School";
+
+    $html = nl2br(e($body));
+    $ok = email_transporter($to, $subject, $html, $body);
+    email_store($to, $subject, $body, $ok, $ok ? 'sent' : 'echec');
+    $GLOBALS['_mail_delivered'] = (bool)$ok;
 }
 
 function send_reset_email(string $to, string $name, string $token): void

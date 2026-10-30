@@ -113,7 +113,17 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
         // Autoriser sans 2FA juste après réinitialisation de mot de passe
         if (!empty($_SESSION['skip_2fa_after_reset']) && $_SESSION['skip_2fa_after_reset'] == $user['id'] && (!empty($_SESSION['skip_2fa_after_reset_time']) && (time() - $_SESSION['skip_2fa_after_reset_time']) < 600)) {
             unset($_SESSION['skip_2fa_after_reset'], $_SESSION['skip_2fa_after_reset_time']);
-            unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['user_role']);
+            // Nettoyer aussi un éventuel état 2FA resté d'une tentative précédente.
+            unset(
+                $_SESSION['pending_2fa'],
+                $_SESSION['pending_2fa_user_role'],
+                $_SESSION['2fa_user_meta'],
+                $_SESSION['2fa_attempts'],
+                $_SESSION['otp_demo'],
+                $_SESSION['user_id'],
+                $_SESSION['session_token'],
+                $_SESSION['user_role']
+            );
             start_user_session($user['id']);
             return [true, 'Connexion réussie.', $user];
         }
@@ -175,19 +185,29 @@ function start_user_session(int $userId): void
     // ensuite comparée à NOW() : mélanger date() PHP et NOW() SQL rend la session
     // invalide dès que les fuseaux de PHP et de la BDD diffèrent.
     $token = generate_token();
-    prepareQuery(
-        'INSERT INTO sessions_utilisateur (user_id, token, ip_address, user_agent, expires_at)
-         VALUES (:uid, :token, :ip, :ua, NOW() + make_interval(secs => :ttl))',
-        [
-            'uid' => $userId,
-            'token' => hash('sha256', $token),
-            'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
-            'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
-            'ttl' => SESSION_TIMEOUT,
-        ]
-    );
-    $_SESSION['session_token'] = hash('sha256', $token);
-    log_activity('auth.login', 'Connexion réussie');
+    try {
+        prepareQuery(
+            'INSERT INTO sessions_utilisateur (user_id, token, ip_address, user_agent, expires_at)
+             VALUES (:uid, :token, :ip, :ua, NOW() + make_interval(secs => :ttl))',
+            [
+                'uid' => $userId,
+                'token' => hash('sha256', $token),
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                'ttl' => SESSION_TIMEOUT,
+            ]
+        );
+        $_SESSION['session_token'] = hash('sha256', $token);
+    } catch (Throwable $e) {
+        // Sans jeton en base, la session reste utilisable (validate_session_token
+        // l'ignore) au lieu de provoquer une erreur fatale après la connexion.
+        unset($_SESSION['session_token']);
+        error_log('Session 2FA non enregistrée en base : ' . $e->getMessage());
+    }
+    try {
+        log_activity('auth.login', 'Connexion réussie');
+    } catch (Throwable $e) {
+    }
 }
 
 /**
@@ -391,6 +411,12 @@ function require_login(): void
         header('Location: ' . BASE_URL . 'index.php');
         exit;
     }
+    // La session peut référencer un compte supprimé ou désactivé. Sans ce
+    // contrôle, les pages renvoient vers index.php qui renvoie lui-même vers
+    // l'espace du rôle => boucle de redirections (« supprimez les cookies »).
+    if (current_user() === null) {
+        logout('Votre session n\'est plus valide. Veuillez vous reconnecter.');
+    }
 }
 
 /**
@@ -400,11 +426,17 @@ function require_role(array $roles): void
 {
     require_login();
     $role = current_role();
-    if (!in_array($role, $roles)) {
+    if (!in_array($role, $roles, true)) {
         // Rediriger vers le dashboard de son propre rôle : la redirection doit
         // être envoyée sans code 403, sinon les navigateurs l'ignorent.
-        header('Location: ' . BASE_URL . role_home((string)$role));
-        exit;
+        $target = role_home((string)$role);
+        if ($role !== null && $role !== '' && $target !== 'index.php') {
+            header('Location: ' . BASE_URL . $target);
+            exit;
+        }
+        // Rôle inconnu : ne jamais renvoyer vers index.php, qui redirigerait
+        // aussitôt ici (boucle de redirections).
+        logout('Votre compte n\'est associé à aucun espace valide. Contactez l\'administrateur.');
     }
 }
 

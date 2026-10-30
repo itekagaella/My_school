@@ -11,9 +11,7 @@ $pers = prepareQuery(
 )->fetch();
 
 if (!$pers) {
-    set_flash('error', 'Profil personnel introuvable.');
-    header('Location: ' . BASE_URL);
-    exit;
+    logout('Profil personnel introuvable. Contactez l\'administrateur.');
 }
 
 $clause = "d.statut = 'actif' AND (d.id IN (SELECT document_id FROM document_partages WHERE user_id = :uid) OR d.id NOT IN (SELECT document_id FROM document_partages))";

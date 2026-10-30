@@ -18,20 +18,15 @@ if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
             } catch (Throwable $e) {
             }
         }
-        $redirects = [
-            'admin' => 'admin/index.php',
-            'eleve' => 'client/eleve/index.php',
-            'prof'  => 'client/prof/index.php',
-            'personnel' => 'client/personnel/index.php',
-            'surveillant' => 'client/surveillant/index.php',
-            'finance' => 'client/finance/index.php',
-            'discipline' => 'client/discipline/index.php',
-        ];
-        $target = $redirects[$role] ?? 'index.php';
-        header('Location: ' . BASE_URL . $target);
-        exit;
+        $target = role_home((string)$role);
+        if ($role !== '' && $target !== 'index.php') {
+            header('Location: ' . BASE_URL . $target);
+            exit;
+        }
+        // Rôle vide/inconnu : une redirection vers index.php bouclerait.
+        logout('Votre compte n\'est associé à aucun espace valide. Contactez l\'administrateur.');
     }
-    header('Location: ' . BASE_URL . '../index.php');
+    header('Location: ' . BASE_URL . 'index.php');
     exit;
 }
 
@@ -67,7 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (!$user || empty($user['dernier_code_otp']) || $user['dernier_code_exp'] < date('Y-m-d H:i:s', time())) {
                     unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
-                    header('Location: ' . BASE_URL . '../index.php');
+                    set_flash('error', 'Le code de vérification a expiré ou le compte est introuvable. Veuillez vous reconnecter.');
+                    header('Location: ' . BASE_URL . 'index.php');
                     exit;
                 }
 
@@ -85,9 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
 
+                    // Une seule régénération : deux appels successifs envoient
+                    // deux cookies de session différents et certains navigateurs
+                    // gardent le mauvais (session vide => retour à la connexion).
                     @session_regenerate_id(true);
                     $_SESSION = [];
-                    @session_regenerate_id(true);
                     $_SESSION['user_id'] = $userId;
                     $_SESSION['user_role'] = $user['role'] ?? '';
                     $_SESSION['last_activity'] = time();
@@ -118,16 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     unset($_SESSION['pending_2fa_user_role']);
 
-                    $redirects = [
-                        'admin' => 'admin/index.php',
-                        'eleve' => 'client/eleve/index.php',
-                        'prof'  => 'client/prof/index.php',
-                        'personnel' => 'client/personnel/index.php',
-                        'surveillant' => 'client/surveillant/index.php',
-                        'finance' => 'client/finance/index.php',
-                        'discipline' => 'client/discipline/index.php',
-                    ];
-                    $target = $redirects[$_SESSION['user_role']] ?? 'index.php';
+                    $target = role_home((string)($_SESSION['user_role'] ?? ''));
+                    if ($target === 'index.php') {
+                        // Rôle vide/inconnu : rediriger vers index.php bouclerait.
+                        logout('Votre compte n\'est associé à aucun espace valide. Contactez l\'administrateur.');
+                    }
                     header('Location: ' . BASE_URL . $target);
                     exit;
                 }

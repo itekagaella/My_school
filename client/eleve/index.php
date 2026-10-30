@@ -13,9 +13,7 @@ $eleve = prepareQuery(
 )->fetch();
 
 if (!$eleve) {
-    set_flash('error', 'Profil élève introuvable.');
-    header('Location: ' . BASE_URL);
-    exit;
+    logout('Profil élève introuvable. Contactez l\'administrateur.');
 }
 
 $eleve_id = $eleve['id'];

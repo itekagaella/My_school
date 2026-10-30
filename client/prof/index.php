@@ -11,9 +11,7 @@ $prof = prepareQuery(
 )->fetch();
 
 if (!$prof) {
-    set_flash('error', 'Profil professeur introuvable.');
-    header('Location: ' . BASE_URL);
-    exit;
+    logout('Profil professeur introuvable. Contactez l\'administrateur.');
 }
 
 $prof_id = $prof['id'];

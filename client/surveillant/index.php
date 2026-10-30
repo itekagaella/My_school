@@ -10,9 +10,7 @@ $active_menu = 'dashboard';
 
 $pers = prepareQuery('SELECT * FROM personnel WHERE user_id = :u', ['u' => $user['id']])->fetch();
 if (!$pers) {
-    set_flash('error', 'Profil personnel introuvable.');
-    header('Location: ' . BASE_URL);
-    exit;
+    logout('Profil personnel introuvable. Contactez l\'administrateur.');
 }
 
 $date = date('Y-m-d');

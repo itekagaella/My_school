@@ -11,9 +11,7 @@ $pers = prepareQuery(
 )->fetch();
 
 if (!$pers) {
-    set_flash('error', 'Profil personnel introuvable.');
-    header('Location: ' . BASE_URL);
-    exit;
+    logout('Profil personnel introuvable. Contactez l\'administrateur.');
 }
 
 $nb_eleves = prepareQuery("SELECT COUNT(*) AS nb FROM eleves WHERE statut='actif'")->fetch()['nb'] ?? 0;

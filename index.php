@@ -11,12 +11,33 @@ $logoIndex = logo_etablissement_url();
 
 // Si déjà connecté, rediriger vers le bon espace
 if (is_logged_in()) {
+    // Filet de sécurité anti-boucle : si index.php est atteint plusieurs fois
+    // en quelques secondes, c'est qu'un tableau de bord renvoie ici en boucle
+    // (navigateur : « redirected you too many times / supprimez les cookies »).
+    $nowGuard = time();
+    $guard = $_SESSION['_redir_guard'] ?? null;
+    if (!is_array($guard) || ($nowGuard - ($guard['t'] ?? 0)) > 10) {
+        $guard = ['n' => 0, 't' => $nowGuard];
+    }
+    $guard['n']++;
+    $_SESSION['_redir_guard'] = $guard;
+    if ($guard['n'] > 3) {
+        unset($_SESSION['_redir_guard']);
+        logout('Boucle de redirection détectée. Vérifiez la fiche profil de votre compte ou contactez l\'administrateur.');
+    }
+
     $role = $_SESSION['user_role'] ?? current_role();
     if (!$role) {
         $role = current_role();
     }
-    header('Location: ' . BASE_URL . role_home((string)$role));
-    exit;
+    $target = role_home((string)$role);
+    if ($role !== null && $role !== '' && $target !== 'index.php') {
+        header('Location: ' . BASE_URL . $target);
+        exit;
+    }
+    // Aucun espace connu pour ce rôle : rediriger vers index.php bouclerait
+    // (index.php renvoie ici même). On ferme donc proprement la session.
+    logout('Votre compte n\'est associé à aucun espace valide. Contactez l\'administrateur.');
 }
 ?>
 <!DOCTYPE html>

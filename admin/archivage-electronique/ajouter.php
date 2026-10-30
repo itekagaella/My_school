@@ -13,12 +13,12 @@ $types = ['PV' => 'Procès-verbal', 'Courrier' => 'Courrier', 'Rapport' => 'Rapp
 
 // Liste des documents existants non encore archivés
 $documents = prepareQuery(
-    "SELECT d.id, d.nom_fichier, d.type_fichier, d.taille_fichier, d.date_creation, d.description, u.nom, u.prenom
+    "SELECT d.id, d.nom_fichier, d.type_fichier, d.taille, d.created_at, d.description, u.nom, u.prenom, d.fichier_path
      FROM documents d
-     LEFT JOIN utilisateurs u ON u.id = d.proprietaire_id
+     LEFT JOIN utilisateurs u ON u.id = d.auteur_id
      WHERE d.statut = 'actif'
        AND NOT EXISTS (SELECT 1 FROM archives_electroniques ae WHERE ae.document_id = d.id AND ae.statut = 'actif')
-     ORDER BY d.date_creation DESC"
+     ORDER BY d.created_at DESC"
 )->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -65,9 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'desc' => $description ?: null,
                                 'mots' => $mots_cles ?: null,
                                 'f_nom' => $doc['nom_fichier'],
-                                'f_chemin' => $doc['chemin_fichier'],
+                                'f_chemin' => $doc['fichier_path'],
                                 'f_type' => $doc['type_fichier'],
-                                'f_taille' => $doc['taille_fichier'],
+                                'f_taille' => $doc['taille'],
                                 'vers_par' => $_SESSION['user_id'],
                                 'document_id' => $document_id
                             ]
@@ -113,7 +113,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                         <option value="">-- Choisir un document --</option>
                         <?php foreach ($documents as $d): ?>
                             <option value="<?= $d['id'] ?>" data-nom="<?= e($d['nom_fichier']) ?>">
-                                <?= e($d['nom_fichier']) ?> (<?= strtoupper($d['type_fichier']) ?>, <?= round($d['taille_fichier']/1024, 1) ?> Ko)
+                                <?= e($d['nom_fichier']) ?> (<?= strtoupper($d['type_fichier']) ?>, <?= round($d['taille']/1024, 1) ?> Ko)
                             </option>
                         <?php endforeach; ?>
                     </select>

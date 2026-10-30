@@ -118,10 +118,9 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
             return [true, 'Connexion réussie.', $user];
         }
 
-        // Nettoyer les sessions potentiellement en conflit
-        unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['user_role']);
+        // Ne pas nettoyer la session ici - ça cause des boucles
         if (session_status() === PHP_SESSION_ACTIVE) {
-            @session_regenerate_id(true);
+            @session_regenerate_id(false);
         }
 
         $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);

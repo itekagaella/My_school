@@ -89,6 +89,9 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
             <?= admin_menu_item('rapports', 'Rapports', 'fa-file-lines', 'admin/rapports/index.php', $active_menu) ?>
             <?= admin_menu_item('stats', 'Statistiques', 'fa-chart-column', 'admin/stats/index.php', $active_menu) ?>
 
+            <li class="nav-section">Communication</li>
+            <?= admin_menu_item('chat', 'Chat', 'fa-comments', 'client/chat.php', $active_menu) ?>
+
             <li class="nav-section">Finances</li>
             <?= admin_menu_item('finance', 'Tableau de bord', 'fa-coins', 'admin/finance/index.php', $active_menu) ?>
             <?= admin_menu_item('finance_frais', 'Frais scolaires', 'fa-file-invoice-dollar', 'admin/finance/frais.php', $active_menu) ?>

@@ -75,7 +75,7 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
             <?= admin_menu_item('horaires', 'Horaires', 'fa-calendar-days', 'admin/horaires/index.php', $active_menu) ?>
             <?= admin_menu_item('notes', 'Notes', 'fa-file-pen', 'admin/notes/index.php', $active_menu) ?>
             <?= admin_menu_item('presences', 'Présences', 'fa-clipboard-check', 'admin/presences/index.php', $active_menu) ?>
-            <?= admin_menu_item('archives', 'Archives', 'fa-box-archive', 'admin/eleves/archive.php', $active_menu) ?>
+            <?= admin_menu_item('archives', 'Archives (comptes)', 'fa-box-archive', 'admin/eleves/archive.php', $active_menu) ?>
 
             <li class="nav-section">Clubs & Communications</li>
             <?= admin_menu_item('clubs', 'Clubs scolaires', 'fa-people-group', 'admin/clubs/index.php', $active_menu) ?>
@@ -83,6 +83,7 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
 
             <li class="nav-section">Gestion documentaire</li>
             <?= admin_menu_item('documents', 'Documents', 'fa-folder-open', 'admin/documents/index.php', $active_menu) ?>
+            <?= admin_menu_item('archivage_electronique', 'Archivage électronique', 'fa-archive', 'admin/archivage-electronique/index.php', $active_menu) ?>
             <?= admin_menu_item('commentaires', 'Commentaires', 'fa-comment-dots', 'admin/commentaires/index.php', $active_menu) ?>
 
             <li class="nav-section">Rapports & Statistiques</li>

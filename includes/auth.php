@@ -386,7 +386,7 @@ function current_role(): ?string
 function require_login(): void
 {
     check_auto_logout();
-    if (!is_logged_in()) {
+    if (!isset($_SESSION['user_id'])) {
         set_flash('warning', 'Veuillez vous connecter pour accéder à cette page.');
         header('Location: ' . BASE_URL . 'index.php');
         exit;

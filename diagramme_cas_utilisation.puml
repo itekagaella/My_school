@@ -1,0 +1,130 @@
+@startuml Diagramme_Cas_Utilisation_My_School
+
+title Diagramme de cas d'utilisation principal - My_School
+
+left to right direction
+
+actor "Administrateur" as Admin
+actor "Professeur" as Prof
+actor "Élève" as Eleve
+actor "Surveillant" as Surv
+actor "Gestionnaire Financier" as Finance
+actor "Responsable Discipline" as Disc
+
+rectangle "Système My_School" {
+  ' Authentification
+  usecase "S'authentifier" as UC_Auth
+  usecase "S'authentifier avec 2FA" as UC_2FA
+  
+  ' Administrateur
+  usecase "Gérer les utilisateurs" as UC_GestUsers
+  usecase "Gérer les classes et matières" as UC_GestClasses
+  usecase "Gérer l'emploi du temps" as UC_GestEDT
+  usecase "Gérer les paramètres" as UC_Param
+  usecase "Gérer les documents" as UC_GestDocs
+  usecase "Générer des rapports" as UC_Rapports
+  usecase "Gérer la sauvegarde" as UC_Sauvegarde
+  
+  ' Commun
+  usecase "Consulter emploi du temps" as UC_ConsEDT
+  usecase "Envoyer/Répondre messages" as UC_Chat
+  usecase "Consulter notifications" as UC_Notif
+  usecase "Gérer son profil" as UC_Profil
+  
+  ' Professeur
+  usecase "Saisir les notes" as UC_SaisirNotes
+  usecase "Gérer les présences" as UC_GestPres
+  usecase "Gérer ses documents" as UC_DocsProf
+  
+  ' Élève
+  usecase "Consulter mes notes" as UC_ConsNotes
+  usecase "Consulter mes bulletins" as UC_Bulletins
+  usecase "Consulter mes paiements" as UC_ConsPaiements
+  usecase "Consulter ma discipline" as UC_ConsDisc
+  usecase "Consulter mes documents" as UC_ConsDocs
+  
+  ' Financier
+  usecase "Gérer les frais scolaires" as UC_GestFrais
+  usecase "Enregistrer les paiements" as UC_EnrPaiement
+  usecase "Générer les reçus" as UC_Recus
+  usecase "Suivre les soldes" as UC_Soldes
+  
+  ' Discipline
+  usecase "Gérer les incidents" as UC_Incidents
+  usecase "Gérer les sanctions" as UC_Sanctions
+  usecase "Gérer les convocations" as UC_Convocations
+  
+  ' Surveillant
+  usecase "Enregistrer les présences" as UC_PresSurv
+}
+
+' Relations Auth
+Admin --> UC_Auth
+Prof --> UC_Auth
+Eleve --> UC_Auth
+Surv --> UC_Auth
+Finance --> UC_Auth
+Disc --> UC_Auth
+
+UC_Auth <.. UC_2FA : <<extend>>
+
+' Relations Admin (principales)
+Admin --> UC_GestUsers
+Admin --> UC_GestClasses
+Admin --> UC_GestEDT
+Admin --> UC_Param
+Admin --> UC_GestDocs
+Admin --> UC_Rapports
+Admin --> UC_Sauvegarde
+Admin --> UC_Chat
+Admin --> UC_Notif
+Admin --> UC_Profil
+
+' Relations Professeur
+Prof --> UC_ConsEDT
+Prof --> UC_SaisirNotes
+Prof --> UC_GestPres
+Prof --> UC_DocsProf
+Prof --> UC_Chat
+Prof --> UC_Notif
+Prof --> UC_Profil
+
+' Relations Élève
+Eleve --> UC_ConsEDT
+Eleve --> UC_ConsNotes
+Eleve --> UC_Bulletins
+Eleve --> UC_ConsPaiements
+Eleve --> UC_ConsDisc
+Eleve --> UC_ConsDocs
+Eleve --> UC_Chat
+Eleve --> UC_Notif
+Eleve --> UC_Profil
+
+' Relations Surveillant
+Surv --> UC_ConsEDT
+Surv --> UC_PresSurv
+Surv --> UC_Incidents
+Surv --> UC_Chat
+Surv --> UC_Notif
+Surv --> UC_Profil
+
+' Relations Finance
+Finance --> UC_GestFrais
+Finance --> UC_EnrPaiement
+Finance --> UC_Recus
+Finance --> UC_Soldes
+Finance --> UC_ConsPaiements
+Finance --> UC_Chat
+Finance --> UC_Notif
+Finance --> UC_Profil
+
+' Relations Discipline
+Disc --> UC_Incidents
+Disc --> UC_Sanctions
+Disc --> UC_Convocations
+Disc --> UC_ConsDisc
+Disc --> UC_Chat
+Disc --> UC_Notif
+Disc --> UC_Profil
+
+@enduml

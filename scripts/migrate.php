@@ -267,8 +267,8 @@ $e = static fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
         <?php endif; ?>
 
         <div class="actions">
-            <a class="btn btn-primary" href="migrate.php">Relancer</a>
-            <a class="btn btn-light" href="migrate.php?force=1">Tout rejouer</a>
+            <a class="btn btn-primary" href="scripts/migrate.php">Relancer</a>
+            <a class="btn btn-light" href="scripts/migrate.php?force=1">Tout rejouer</a>
             <a class="btn btn-light" href="<?= $e(BASE_URL . 'admin/index.php') ?>">Retour au tableau de bord</a>
         </div>
 

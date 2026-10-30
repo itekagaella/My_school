@@ -81,12 +81,15 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
     }
 
     // Le profil sélectionné sur la page de connexion doit correspondre au rôle réel du compte.
-    // Test placé après vérification du mot de passe et avant toute session/2FA :
-    // le mot de passe est correct donc ni incrémentation ni remise à zéro des tentatives
-    // (pas de risque de verrouillage) et aucune session n'est ouverte en cas de mismatch.
-    // Le profil « personnel » regroupe la famille des agents : surveillant, finance, discipline.
-    $profilOk = ($user['role'] === $profilAttendu)
-        || ($profilAttendu === 'personnel' && in_array($user['role'], personnel_roles(), true));
+    // L'admin peut se connecter directement sans sélection de profil.
+    if ($profilAttendu === 'admin' && $user['role'] === 'admin') {
+        $profilOk = true;
+    } elseif ($profilAttendu !== 'admin') {
+        $profilOk = ($user['role'] === $profilAttendu)
+            || ($profilAttendu === 'personnel' && in_array($user['role'], personnel_roles(), true));
+    } else {
+        $profilOk = ($user['role'] === 'admin');
+    }
     if ($profilAttendu !== null && !$profilOk) {
         $role_label = role_labels();
         $label = $role_label[$user['role']] ?? $user['role'];

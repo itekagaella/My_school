@@ -14,12 +14,12 @@ $tokenFromUrl = $_GET['token'] ?? '';
 
 // Si vient avec un token (ancien lien), rediriger vers forgot
 if (!empty($tokenFromUrl) && empty($email)) {
-    header('Location: ' . BASE_URL . 'forgot_password.php');
+    header('Location: ' . BASE_URL . 'auth/forgot_password.php');
     exit;
 }
 
 if (empty($email)) {
-    header('Location: ' . BASE_URL . 'forgot_password.php');
+    header('Location: ' . BASE_URL . 'auth/forgot_password.php');
     exit;
 }
 ?>
@@ -108,7 +108,7 @@ if (empty($email)) {
                 <i class="fa-solid fa-check me-2"></i>Réinitialiser mon mot de passe
             </button>
             <div class="text-center mt-3">
-                <a href="forgot_password.php" class="small text-decoration-none"><i class="fa-solid fa-rotate-left me-1"></i>Renvoyer un code</a>
+                <a href="auth/forgot_password.php" class="small text-decoration-none"><i class="fa-solid fa-rotate-left me-1"></i>Renvoyer un code</a>
             </div>
         </form>
         <?php else: ?>

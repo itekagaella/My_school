@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="text-center mt-3">
-            <a href="logout.php" class="small text-decoration-none">Annuler et se déconnecter</a>
+            <a href="auth/logout.php" class="small text-decoration-none">Annuler et se déconnecter</a>
         </div>
     </div>
 </body>

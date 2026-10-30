@@ -67,7 +67,7 @@ if (is_logged_in()) {
                     $result = login($email, $password, $profil);
                     if ($result[1] === '2FA_REQUIRED') {
                         set_flash('info', 'Un code de vérification a été envoyé par email.');
-                        header('Location: ' . BASE_URL . 'verify_2fa.php');
+                        header('Location: ' . BASE_URL . 'auth/verify_2fa.php');
                         exit;
                     } elseif ($result[0]) {
                         set_flash('success', 'Bienvenue !');
@@ -128,7 +128,7 @@ if (is_logged_in()) {
                 </div>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <a href="forgot_password.php" class="small text-decoration-none fw-semibold text-muted">Mot de passe oublié ?</a>
+                <a href="auth/forgot_password.php" class="small text-decoration-none fw-semibold text-muted">Mot de passe oublié ?</a>
             </div>
             <button type="submit" class="btn btn-primary w-100 py-2">
                 <i class="fa-solid fa-right-to-bracket me-2"></i>Se connecter

@@ -524,3 +524,116 @@ INSERT INTO themes (nom_theme, css_path, actif) VALUES
 ('Thème Vert','assets/css/theme-green.css',0);
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- PROCÉDURES STOCKÉES - Modification et Suppression
+-- ============================================================
+
+DELIMITER $$
+
+-- Procédure pour modifier un élève
+CREATE PROCEDURE sp_modifier_eleve(
+    IN p_eleve_id INT,
+    IN p_nom VARCHAR(100),
+    IN p_prenom VARCHAR(100),
+    IN p_classe_id INT,
+    IN p_parent_nom VARCHAR(200),
+    IN p_parent_tel VARCHAR(20),
+    IN p_parent_email VARCHAR(150),
+    IN p_adresse TEXT
+)
+BEGIN
+    UPDATE eleves 
+    SET nom = p_nom,
+        prenom = p_prenom,
+        classe_id = p_classe_id,
+        parent_nom = p_parent_nom,
+        parent_tel = p_parent_tel,
+        parent_email = p_parent_email,
+        adresse = p_adresse,
+        updated_at = NOW()
+    WHERE id = p_eleve_id;
+    
+    SELECT 'Élève modifié avec succès' AS message, ROW_COUNT() AS lignes_modifiees;
+END$$
+
+-- Procédure pour supprimer un élève (suppression physique)
+CREATE PROCEDURE sp_supprimer_eleve(
+    IN p_eleve_id INT
+)
+BEGIN
+    DECLARE v_user_id INT;
+    
+    SELECT user_id INTO v_user_id FROM eleves WHERE id = p_eleve_id;
+    
+    DELETE FROM eleves WHERE id = p_eleve_id;
+    
+    IF v_user_id IS NOT NULL THEN
+        DELETE FROM utilisateurs WHERE id = v_user_id;
+    END IF;
+    
+    SELECT 'Élève supprimé avec succès' AS message;
+END$$
+
+-- Procédure pour archiver un élève (soft delete)
+CREATE PROCEDURE sp_archiver_eleve(
+    IN p_eleve_id INT
+)
+BEGIN
+    UPDATE eleves 
+    SET statut = 'archive', updated_at = NOW()
+    WHERE id = p_eleve_id;
+    
+    SELECT 'Élève archivé avec succès' AS message, ROW_COUNT() AS lignes_modifiees;
+END$$
+
+-- Procédure pour désarchiver un élève
+CREATE PROCEDURE sp_desarchiver_eleve(
+    IN p_eleve_id INT
+)
+BEGIN
+    UPDATE eleves 
+    SET statut = 'actif', updated_at = NOW()
+    WHERE id = p_eleve_id;
+    
+    SELECT 'Élève réactivé avec succès' AS message, ROW_COUNT() AS lignes_modifiees;
+END$$
+
+-- Procédure pour modifier un utilisateur
+CREATE PROCEDURE sp_modifier_utilisateur(
+    IN p_user_id INT,
+    IN p_nom VARCHAR(100),
+    IN p_prenom VARCHAR(100),
+    IN p_email VARCHAR(150),
+    IN p_role VARCHAR(20),
+    IN p_actif TINYINT(1)
+)
+BEGIN
+    UPDATE utilisateurs 
+    SET nom = p_nom,
+        prenom = p_prenom,
+        email = p_email,
+        role = p_role,
+        actif = p_actif,
+        updated_at = NOW()
+    WHERE id = p_user_id;
+    
+    SELECT 'Utilisateur modifié avec succès' AS message, ROW_COUNT() AS lignes_modifiees;
+END$$
+
+-- Procédure pour supprimer un utilisateur
+CREATE PROCEDURE sp_supprimer_utilisateur(
+    IN p_user_id INT
+)
+BEGIN
+    DELETE FROM utilisateurs WHERE id = p_user_id;
+    SELECT 'Utilisateur supprimé avec succès' AS message;
+END$$
+
+DELIMITER ;
+
+-- Exemples d'utilisation
+-- CALL sp_modifier_eleve(1, 'Dupont', 'Jean', 2, 'Dupont Parent', '12345678', 'parent@email.com', 'Adresse');
+-- CALL sp_archiver_eleve(1);
+-- CALL sp_supprimer_eleve(1);
+-- CALL sp_desarchiver_eleve(1);

@@ -48,7 +48,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     <div class="card-body">
         <form method="get" action="" class="row g-2 mb-3">
             <div class="col-md-5">
-                <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher un club...">
+                <input type="text" name="search" autocomplete="off" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher un club...">
             </div>
             <div class="col-md-3">
                 <select name="statut" class="form-select">

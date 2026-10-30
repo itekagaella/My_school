@@ -7,6 +7,7 @@
     <!-- Bootstrap JS Bundle (nécessaire aux modals) -->
     <script src="<?= BASE_URL ?>assets/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="<?= BASE_URL ?>assets/js/app.js?v=<?= filemtime(__DIR__ . '/../assets/js/app.js') ?>"></script>
+    <script src="<?= BASE_URL ?>assets/js/live-search.js?v=<?= @filemtime(__DIR__ . '/../assets/js/live-search.js') ?: time() ?>"></script>
     <footer class="app-footer">
         <div class="container text-center py-3">
             <span>&copy; <?= date('Y') ?> <strong><?= e(nom_etablissement()) ?></strong> - Système de Gestion Scolaire. Tous droits réservés.</span>

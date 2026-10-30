@@ -64,7 +64,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
         <!-- Filtres -->
         <form method="get" action="" class="row g-2 mb-3">
             <div class="col-md-4">
-                <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher (nom, prénom, matricule)...">
+                <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher (nom, prénom, matricule)..." autocomplete="off">
             </div>
             <div class="col-md-3">
                 <select name="classe" class="form-select">

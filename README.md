@@ -1,238 +1,141 @@
-# My_School
+# My_School - Système de Gestion Scolaire
 
-Système de Gestion Scolaire — PHP 8.5 + PostgreSQL
+My_School est une application web de gestion scolaire complète développée en PHP 8.5 avec PostgreSQL. Elle permet de gérer les élèves, professeurs, notes, présences, emplois du temps, communications, finances, documents et bien plus encore.
+
+## Fonctionnalités principales
+
+- **Gestion des utilisateurs** - Élèves, Professeurs, Personnel, Administrateurs avec système de rôles et permissions
+- **Scolarité** - Inscriptions, classes, matières, emplois du temps
+- **Évaluations** - Gestion des notes, bulletins, appréciations
+- **Présences & Discipline** - Suivi des présences, absences, sanctions et incidents
+- **Communications** - Notifications, messages, communications à destination des parents/élèves
+- **Finance** - Frais scolaires, paiements, factures, rapports financiers
+- **Documents** - Gestion documentaire avec versioning et partage
+- **Archivage électronique (GED)** - Archivage des documents officiels avec métadonnées, référence et recherche
+- **Recherche documentaire** - Recherche unifiée dans les documents et l'archivage électronique
+- **Authentification sécurisée** - Connexion avec 2FA par OTP, verrouillage de compte, sessions sécurisées
+- **Notifications par email** - Système d'envoi via SMTP (Brevo) avec file d'attente automatique
+- **Rapports & Statistiques** - Tableaux de bord et exports PDF/Excel
+- **Sauvegarde** - Outil de sauvegarde/restauration intégré
+
+## Technologies utilisées
+
+- **Backend** : PHP 8.5
+- **Base de données** : PostgreSQL 14+
+- **Frontend** : HTML5, CSS3, JavaScript, Bootstrap 5
+- **Bibliothèques** : Chart.js, DataTables, FPDF, PHPMailer-like custom SMTP client
 
 ## Prérequis
 
-- [PHP 8.5+](https://windows.php.net/download/) avec extensions : `pdo_pgsql`, `pgsql`, `gd`, `mbstring`, `openssl`, `curl`, `zip`
-- [PostgreSQL 14+](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
-- Serveur web Apache (recommandé avec Laragon/XAMPP) ou serveur PHP intégré
+- PHP 8.5 ou supérieur
+- Extensions PHP : `pdo_pgsql`, `pgsql`, `gd`, `mbstring`, `openssl`, `curl`, `zip`, `fileinfo`
+- PostgreSQL 14 ou supérieur
+- Serveur web Apache/Nginx ou PHP intégré
 
-## Installation (Windows)
+## Installation
 
-### Option 1 : Laragon (recommandé)
-1. Installer [Laragon](https://laragon.org/download/) (Version Full)
-2. Démarrer Laragon
-3. Placer ce dossier dans `C:\laragon\www\My_School\`
-4. Démarrer Apache et PostgreSQL depuis Laragon
-5. Ouvrir [http://localhost/My_School/install.php](http://localhost/My_School/install.php)
-6. Suivre l'assistant d'installation
-7. **Supprimer `install.php`** après installation réussie
-8. Accéder à [http://localhost/My_School/](http://localhost/My_School/)
+### 1. Cloner le dépôt
+```bash
+git clone https://github.com/itekagaella/My_school.git
+cd My_school
+```
 
-### Option 2 : XAMPP
-1. Installer [XAMPP](https://www.apachefriends.org/fr/index.html) et [PostgreSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
-2. Placer ce dossier dans `C:\xampp\htdocs\My_School\`
-3. Activer les extensions dans `php.ini` (`pdo_pgsql`, `pgsql`, `gd`, `mbstring`) puis redémarrer Apache
-4. Démarrer Apache et PostgreSQL
-5. Ouvrir [http://localhost/My_School/install.php](http://localhost/My_School/install.php)
-6. Terminer l'installation puis supprimer `install.php`
+### 2. Configurer l'environnement
+Copiez le fichier d'exemple et adaptez-le à votre configuration :
+```bash
+cp .env.example .env
+```
 
-### Option 3 : Serveur PHP intégré
-1. Créer une base `my_school` dans PostgreSQL
-2. Copier `.env.example` vers `.env` et configurer les identifiants PostgreSQL
-3. Ouvrir un terminal dans le dossier du projet
-4. Lancer : `php -S localhost:8080`
-5. Ouvrir [http://localhost:8080/install.php](http://localhost:8080/install.php)
-6. Terminer l'installation puis supprimer `install.php`
-
-## Configuration manuelle (.env)
-
-Copier `.env.example` vers `.env` :
+Éditez `.env` avec vos paramètres :
 
 ```env
 DB_HOST=127.0.0.1
 DB_PORT=5432
 DB_NAME=my_school
 DB_USER=postgres
-DB_PASSWORD=VOTRE_MOT_DE_PASSE
+DB_PASSWORD=votre_mot_de_passe
+
 ENCRYPTION_KEY=GENEREZ_UNE_CLE_UNIQUE
-MAIL_ENABLED=false
-DEMO_LINKS=false
+
+# Email (Brevo SMTP ou autre)
+MAIL_TRANSPORT=smtp
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USERNAME=votre_login_smtp
+MAIL_PASSWORD=votre_cle_api_smtp
+MAIL_FROM=votre_email_valide
+MAIL_FROM_NAME=Myschool
+MAIL_ENCRYPTION=tls
+
+# Sécurité
+CRON_TOKEN=votre_token_cron
 ```
 
-Générer une clé unique :
-```cmd
+Générez une clé de chiffrement sécurisée :
+```bash
 php -r "echo bin2hex(random_bytes(32));"
 ```
 
-### Encodage des accents (UTF-8)
+### 3. Créer la base de données
+Créez une base PostgreSQL nommée `my_school` (ou le nom défini dans `.env`).
 
-L'application force l'UTF-8 au démarrage (`config/config.php`) et sur la
-connexion PostgreSQL : les accents restent corrects même si `php.ini`
-définit `default_charset = ISO-8859-1`, ce qui affichait « Ã© » au lieu de
-« é » sur certains serveurs Windows. Si des accents cassés subsistent,
-vérifier que `default_charset = UTF-8` dans le `php.ini` utilisé par PHP.
+### 4. Lancer l'application
 
-Si des **valeurs déjà enregistrées** s'affichent « Ã© » (import `psql` sur
-Windows, ancienne connexion en Windows-1252...), ouvrir
-`reparer_accents.php` en tant qu'administrateur : la page affiche un
-diagnostic, détecte les valeurs concernées, montre un aperçu avant → après
-et applique la correction après confirmation. Sauvegarder la base avant,
-et supprimer la page après usage.
-
-Pour un import manuel, forcer l'UTF-8 avant de charger le fichier :
-
-```sql
-SET client_encoding = 'UTF8';
-\i config/init.sql
+#### Avec serveur PHP intégré (développement)
+```bash
+php -S localhost:8080
 ```
+Accédez à [http://localhost:8080](http://localhost:8080)
 
-### Téléversements (logos, avatars, documents)
+#### Avec Apache/Nginx
+Placez le projet dans votre racine web et configurez le virtual host vers le dossier du projet.
 
-Formats acceptés : PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, JPG, JPEG, PNG, GIF,
-WebP et TXT (les images : PNG, JPG, GIF ou WebP — le SVG est refusé pour
-des raisons de sécurité). Les logos de club et photos de profil
-n'acceptent que des images (JPEG, PNG, GIF, WebP).
-
-Chaque utilisateur peut définir sa **photo de profil** depuis « Mon profil »
-(aperçu immédiat, remplacement et suppression possibles). Elle apparaît dans
-la barre latérale, le chat, les listes d'utilisateurs, d'élèves, de
-professeurs, de personnel, les commentaires et les partages de documents.
-
-La vérification du type réel utilise l'extension PHP `fileinfo` si elle est
-active. Si elle ne l'est pas, l'application se rabat automatiquement sur
-`getimagesize()` (images), la signature `%PDF-` (PDF) puis l'extension du
-fichier : le téléversement continue de fonctionner. Activez tout de même
-`fileinfo` dans `php.ini` pour une vérification optimale.
-
-La taille maximale effective est la **plus petite** de ces limites :
-
-- `MAX_FILE_SIZE` dans `config/config.php` (10 Mo) ;
-- `upload_max_filesize` de PHP (souvent **2 Mo** par défaut) ;
-- `post_max_size` de PHP (souvent 8 Mo).
-
-Avec PHP-FPM ou Apache, créer un fichier `.user.ini` à la racine du projet :
-
-```ini
-upload_max_filesize = 10M
-post_max_size = 12M
-```
-
-Avec le serveur PHP intégré (`php -S`), ces valeurs viennent de `php.ini` :
+### 5. Appliquer les migrations
+Connectez-vous en tant qu'administrateur et accédez à `migrate.php` pour appliquer les migrations SQL, ou exécutez-les directement avec `psql`.
 
 ```bash
-php -d upload_max_filesize=10M -d post_max_size=12M -S 0.0.0.0:8082
+psql -U postgres -d my_school -f config/init.sql
 ```
 
-### Emails (2FA et mot de passe oublié)
+## Configuration de production
 
-- `MAIL_ENABLED=true` : envoi réel des emails via `mail()` du serveur.
-  Indispensable pour que la 2FA et la réinitialisation de mot de passe
-  fonctionnent en production (un serveur SMTP doit être configuré sur la machine).
-- `MAIL_ENABLED=false` : les emails sont écrits dans `storage/mail/` et
-  consultables dans **Admin > Journal > Boîte email** (mode démo).
-- `DEMO_LINKS=true` : affiche les codes OTP / liens directement à l'écran
-  lorsqu'aucun SMTP n'est configuré — à activer uniquement pour une démo locale,
-  jamais sur un déploiement accessible en réseau.
-
-## Identifiants par défaut
-
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Administrateur | `admin@myschool.edu` | `admin123` |
-
-**Important :** Changez ce mot de passe dès la première connexion.
+- **HTTPS** : Activez HTTPS et les cookies sécurisés se configurent automatiquement
+- **Fichier `.env`** : Protégez-le, ne le commitez jamais
+- **Permissions** : Assurez-vous que `assets/uploads/`, `storage/`, `logs/` sont accessibles en écriture
+- **Tâches cron** : Pour le traitement automatique des emails, configurez un cron/systemd ou utilisez le déclenchement asynchrone intégré
+- **Headers de sécurité** : Déjà configurés dans `.htaccess`
 
 ## Structure du projet
 
 ```
-admin/        Interface d'administration
-client/       Espace élèves/profs/personnel
-api/          API REST
-config/       Configuration, schéma SQL (init.sql), migrations
-includes/     Fonctions, authentification, layouts
-assets/       CSS, JS, uploads
-install.php   Assistant d'installation (à supprimer après usage)
+My_School/
+├── admin/              # Interface administrateur
+├── api/                # Endpoints API REST
+├── assets/             # CSS, JS, images, uploads
+├── bin/                # Scripts CLI (envoi emails)
+├── client/             # Interfaces élèves/profs/personnel
+├── config/             # Configuration, BDD, migrations
+├── includes/           # Fonctions, auth, layouts, mailer
+├── storage/            # Fichiers temporaires, sauvegardes
+└── index.php           # Page de connexion
 ```
-
-## Fonctionnalités principales
-
-- Authentification sécurisée (sessions, 2FA, CSRF, verrouillage comptes)
-- Gestion utilisateurs, élèves, professeurs, personnel, classes, matières
-- Horaires, notes, présences, absences
-- Clubs, communications, documents (avec versions/partage)
-- Rapports PDF/Excel, statistiques
-- Chat interne, notifications
-- Journal d'activités, sauvegardes
-
-## Rôles du personnel
-
-La famille « personnel » regroupe désormais trois profils distincts (sans
-droits d'administration), sélectionnables à la création d'un membre :
-
-- **Surveillant** (`surveillant`) : suivi des élèves, saisie des présences et
-  signalement des incidents.
-- **Gestionnaire financier** (`finance`) : frais scolaires, enregistrement des
-  paiements et édition des reçus, soldes des élèves, rapport financier, exports.
-  Les paiements sont acceptés **uniquement en espèces**.
-- **Responsable discipline** (`discipline`) : incidents, sanctions et
-  convocations des parents, exports.
-
-L'administrateur conserve l'accès complet aux modules Finance et Discipline
-depuis l'espace d'administration. Le rôle générique `personnel` reste accepté
-pour compatibilité (les comptes existants sont migrés vers `surveillant`).
-
-## Mise à jour d'une installation existante
-
-Après avoir récupéré une nouvelle version du code, les migrations de
-`config/migrations/*.sql` doivent être appliquées sur la base existante
-(sinon les nouvelles pages renvoient une erreur, les nouvelles tables
-n'existant pas encore).
-
-### Méthode simple : `migrate.php`
-
-Le fichier `migrate.php` (à la racine du projet) applique les migrations
-manquantes en une seule fois :
-
-- **Navigateur** : se connecter en **administrateur**, puis ouvrir
-  `http://votre-serveur/migrate.php`. La page indique pour chaque fichier
-  s'il a été appliqué, s'il était déjà à jour ou s'il a échoué.
-- **Ligne de commande** (depuis la racine du projet) :
-
-```bash
-php migrate.php
-```
-
-Il suffit de relancer ce fichier après chaque mise à jour du code : les
-migrations déjà appliquées sont ignorées et un fichier modifié est rejoué
-automatiquement (suivi dans la table `schema_migrations`). Pour tout rejouer :
-
-```bash
-php migrate.php --force
-```
-
-(ou `migrate.php?force=1` dans le navigateur).
-
-### Méthode manuelle : psql
-
-```bash
-for f in config/migrations/*.sql; do
-  psql -U postgres -d my_school -f "$f"
-done
-```
-
-Les migrations sont **idempotentes** : elles peuvent être relancées sans risque.
-Faire une sauvegarde avant : `pg_dump -U postgres my_school > sauvegarde.sql`.
-
-### Base distante
-
-`migrate.php` utilise les identifiants PostgreSQL de `.env`. Pour mettre à
-jour une base distante sans redéployer le code, renseignez temporairement
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` et `DB_PASSWORD` avec ceux de la
-base distante, puis lancez :
-
-```bash
-php migrate.php
-```
-
-Les données existantes (élèves, notes, paiements, comptes, etc.) sont
-conservées : aucune migration ne recrée la base ni ne supprime de table.
-Vous pouvez ensuite rétablir vos identifiants locaux.
-
-Une installation neuve via `install.php` applique automatiquement toutes les
-migrations.
 
 ## Sécurité
 
-En production : changez l'administrateur par défaut, supprimez `install.php`, modifiez `ENCRYPTION_KEY` et les identifiants PostgreSQL. `migrate.php` n'est accessible qu'à un administrateur connecté ; supprimez-le après la mise à jour si vous préférez passer par `psql`.
+- Requêtes SQL préparées avec PDO
+- Protection CSRF sur tous les formulaires
+- Échappement XSS avec helper `e()`
+- Authentification à double facteur (2FA)
+- Hachage des mots de passe avec `password_hash()`
+- Verrouillage après tentatives échouées
+- Sessions sécurisées avec régénération d'ID
+- Headers de sécurité (CSP, X-Frame-Options, X-Content-Type-Options)
+- Protection des répertoires sensibles
+
+## Auteur
+
+Développé par **itekagaella**
+
+## Licence
+
+Ce projet est à usage éducatif et institutionnel.

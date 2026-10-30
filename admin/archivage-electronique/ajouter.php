@@ -45,9 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($exists) {
                     set_flash('error', 'Ce document est déjà archivé électroniquement.');
                 } else {
-                    $ref = 'GED-' . date('Y') . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
-                    while (prepareQuery('SELECT id FROM archives_electroniques WHERE reference = :r', ['r' => $ref])->fetch()) {
-                        $ref = 'GED-' . date('Y') . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+                    $ref = 'GED-' . date('Y') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                    $attempts = 0;
+                    while ($attempts < 10 && prepareQuery('SELECT id FROM archives_electroniques WHERE reference = :r', ['r' => $ref])->fetch()) {
+                        $ref = 'GED-' . date('Y') . '-' . str_pad(random_int(1000, 9999), 4, '0', STR_PAD_LEFT);
+                        $attempts++;
                     }
 
                     try {

@@ -50,7 +50,7 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <div class="card mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="fa-solid fa-archive me-2"></i>Archivage électronique (GED)</span>
-        <a href="ajouter.php" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus me-1"></i>Verser un document</a>
+        <a href="ajouter.php" class="btn btn-sm btn-primary"><i class="fa-solid fa-archive me-1"></i>Archiver un document existant</a>
     </div>
     <div class="card-body">
         <form method="get" class="row g-2">

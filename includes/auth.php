@@ -110,6 +110,14 @@ function login(string $email, string $password, ?string $profilAttendu = null): 
 
     // Si 2FA activée, générer et stocker le code OTP dans une session temporaire
     if ($user['deux_facteurs']) {
+        // Autoriser sans 2FA juste après réinitialisation de mot de passe
+        if (!empty($_SESSION['skip_2fa_after_reset']) && $_SESSION['skip_2fa_after_reset'] == $user['id'] && (!empty($_SESSION['skip_2fa_after_reset_time']) && (time() - $_SESSION['skip_2fa_after_reset_time']) < 600)) {
+            unset($_SESSION['skip_2fa_after_reset'], $_SESSION['skip_2fa_after_reset_time']);
+            unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['user_role']);
+            start_user_session($user['id']);
+            return [true, 'Connexion réussie.', $user];
+        }
+
         // Nettoyer les sessions potentiellement en conflit
         unset($_SESSION['user_id'], $_SESSION['session_token'], $_SESSION['user_role']);
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -482,6 +490,9 @@ function reset_password_with_otp(string $email, string $otp, string $newPassword
         'UPDATE password_resets SET used = TRUE WHERE id = :id',
         ['id' => $row['id']]
     );
+    // Autoriser la connexion sans 2FA juste après réinitialisation
+    $_SESSION['skip_2fa_after_reset'] = $user['id'];
+    $_SESSION['skip_2fa_after_reset_time'] = time();
     // Nettoyer les sessions de réinitialisation uniquement
     unset($_SESSION['reset_email']);
     unset($_SESSION['reset_user_id']);

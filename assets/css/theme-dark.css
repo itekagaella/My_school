@@ -14,6 +14,6 @@ body { background: #111827; color: #f1f5f9; }
 .card-header { background: #1f2937; border-color: #374151; }
 .table thead th { background: #111827; color: #94a3b8; }
 .table tbody tr:hover { background: #1f2937; }
-.chat-bubble.sent { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; }
-.chat-bubble.received { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; }
+.chat-bubble.sent { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #000; }
+.chat-bubble.received { background: #1f2937; color: #000; border: 1px solid #374151; }
 .chat-users .user-item:hover, .chat-users .user-item.active { background: #1f2937; }

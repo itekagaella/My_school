@@ -235,7 +235,41 @@ function verify_2fa(string $code): array
     );
     unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
 
-    start_user_session($userId);
+    // Démarrer la session sans régénération agressive pour éviter les boucles
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_regenerate_id(false);
+    }
+    $_SESSION['user_id'] = $userId;
+    $_SESSION['last_activity'] = time();
+    $_SESSION['login_time'] = time();
+
+    try {
+        $ur = prepareQuery('SELECT role FROM utilisateurs WHERE id = :id', ['id' => $userId])->fetch();
+        if ($ur && !empty($ur['role'])) {
+            $_SESSION['user_role'] = $ur['role'];
+        }
+    } catch (Throwable $e) {
+    }
+
+    $token = generate_token();
+    try {
+        prepareQuery(
+            'INSERT INTO sessions_utilisateur (user_id, token, ip_address, user_agent, expires_at)
+             VALUES (:uid, :token, :ip, :ua, NOW() + make_interval(secs => :ttl))',
+            [
+                'uid' => $userId,
+                'token' => hash('sha256', $token),
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                'ttl' => SESSION_TIMEOUT,
+            ]
+        );
+        $_SESSION['session_token'] = hash('sha256', $token);
+    } catch (Throwable $e) {
+        // En cas d'erreur, continuer sans token DB pour éviter le blocage
+        unset($_SESSION['session_token']);
+    }
+    log_activity('auth.login', 'Connexion réussie');
     return [true, 'Authentification à deux facteurs réussie.'];
 }
 

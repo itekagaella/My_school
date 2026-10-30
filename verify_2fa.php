@@ -2,7 +2,7 @@
 /**
  * Vérification de l'authentification à deux facteurs (2FA)
  */
-require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
@@ -44,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($code)) {
             $error = 'Veuillez saisir le code.';
         } else {
-            // Vérification directe sans passer par verify_2fa() qui peut causer des boucles
             if (empty($_SESSION['2fa_attempts'])) $_SESSION['2fa_attempts'] = ['count' => 0, 'start' => time()];
             if ($_SESSION['2fa_attempts']['count'] >= MAX_LOGIN_ATTEMPTS) {
                 if (time() - $_SESSION['2fa_attempts']['start'] < LOCKOUT_MINUTES * 60) {
@@ -76,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['2fa_attempts']['count']++;
                     $error = 'Code de vérification incorrect (tentative ' . $_SESSION['2fa_attempts']['count'] . '/' . MAX_LOGIN_ATTEMPTS . ').';
                 } else {
-                    // Code valide - créer session directement
                     try {
                         prepareQuery(
                             'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
@@ -85,10 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } catch (Throwable $e) {
                     }
 
-                    // Nettoyer session 2FA
                     unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
 
-                    // Créer nouvelle session propre
                     @session_regenerate_id(true);
                     $_SESSION = [];
                     @session_regenerate_id(true);
@@ -97,7 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['last_activity'] = time();
                     $_SESSION['login_time'] = time();
 
-                    // Essayer de créer token DB sans bloquer
                     try {
                         $token = bin2hex(random_bytes(32));
                         prepareQuery(

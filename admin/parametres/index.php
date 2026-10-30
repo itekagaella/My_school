@@ -9,6 +9,7 @@ $active_menu = 'parametres';
 $cles = [
     'nom_etablissement' => 'Nom de l\'établissement',
     'logo_etablissement' => 'Logo de l\'établissement (URL ou chemin relatif)',
+    'app_version' => 'Version de l\'application',
     'annee_scolaire' => 'Année scolaire',
     'adresse_etablissement' => 'Adresse',
     'telephone_etablissement' => 'Téléphone',
@@ -94,6 +95,31 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
     </div>
     <div class="col-md-4">
         <div class="card">
+            <div class="card-header"><i class="fa-solid fa-code-branch me-2"></i>Gestion de version</div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted d-block">Version de l'application</small>
+                    <strong class="fs-5">v<?= e(get_param('app_version', '1.0.0')) ?></strong>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted d-block">Dernière mise à jour</small>
+                    <span><?= e(get_param('app_last_update', date('d/m/Y'))) ?></span>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted d-block">Environnement</small>
+                    <span class="badge bg-success">Production</span>
+                </div>
+                <hr>
+                <form method="post" action="">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="app_version" value="<?= e(get_param('app_version', '1.0.0')) ?>">
+                    <input type="hidden" name="app_last_update" value="<?= date('d/m/Y') ?>">
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="fa-solid fa-rotate me-1"></i>Mettre à jour la date de version</button>
+                </form>
+                <small class="text-muted d-block mt-2">Git: <?= @trim(shell_exec('cd ' . escapeshellarg(ROOT_PATH) . ' && git rev-parse --short HEAD 2>/dev/null')) ?: 'N/A' ?></small>
+            </div>
+        </div>
+        <div class="card mt-3">
             <div class="card-header"><i class="fa-solid fa-palette me-2"></i>Apparence</div>
             <div class="card-body">
                 <p class="text-muted small">Gérez l'apparence de l'interface depuis la page dédiée aux thèmes.</p>

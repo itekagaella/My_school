@@ -29,9 +29,9 @@
 $isCli = PHP_SAPI === 'cli';
 
 if ($isCli) {
-    require_once __DIR__ . '/config/database.php';
+    require_once __DIR__ . '/../config/database.php';
 } else {
-    require_once __DIR__ . '/includes/auth.php';
+    require_once __DIR__ . '/../includes/auth.php';
     require_role(['admin']);
 }
 
@@ -39,7 +39,7 @@ $force = $isCli
     ? in_array('--force', array_slice($argv ?? [], 1), true)
     : (($_GET['force'] ?? '') === '1');
 
-$migrationsDir = __DIR__ . '/config/migrations';
+$migrationsDir = __DIR__ . '/../config/migrations';
 $files = glob($migrationsDir . '/*.sql') ?: [];
 sort($files, SORT_NATURAL | SORT_FLAG_CASE);
 

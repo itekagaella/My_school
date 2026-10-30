@@ -8,6 +8,7 @@ $active_menu = 'commentaires';
 
 $search = clean_input(get('search', ''));
 $doc_filter = (int)get('document_id', 0);
+$contexte_filter = clean_input(get('contexte', ''));
 
 $where = [];
 $params = [];
@@ -16,15 +17,19 @@ if ($search !== '') {
     $params['s'] = '%' . strtolower($search) . '%';
 }
 if ($doc_filter > 0) {
-    $where[] = 'c.document_id = :doc_id';
+    $where[] = 'COALESCE(c.document_id, c.contexte_id) = :doc_id';
     $params['doc_id'] = $doc_filter;
+}
+if ($contexte_filter !== '') {
+    $where[] = "COALESCE(c.contexte, 'document') = :ctx";
+    $params['ctx'] = $contexte_filter;
 }
 $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $commentaires = prepareQuery(
     "SELECT c.*, d.nom_fichier, u.prenom AS user_prenom, u.nom AS user_nom, u.avatar AS user_avatar
      FROM commentaires c
-     LEFT JOIN documents d ON d.id = c.document_id
+     LEFT JOIN documents d ON d.id = COALESCE(c.document_id, c.contexte_id)
      LEFT JOIN utilisateurs u ON u.id = c.user_id
      $whereSql ORDER BY c.created_at DESC",
     $params
@@ -52,10 +57,21 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <div class="card">
     <div class="card-body">
         <form method="get" action="" class="row g-2 mb-3">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <input type="text" name="search" value="<?= e($search) ?>" class="form-control" placeholder="Rechercher dans le contenu...">
             </div>
-            <div class="col-md-5">
+            <div class="col-md-3">
+                <select name="contexte" class="form-select">
+                    <option value="">Tous les contextes</option>
+                    <option value="document" <?= $contexte_filter === 'document' ? 'selected' : '' ?>>Documents</option>
+                    <option value="eleve" <?= $contexte_filter === 'eleve' ? 'selected' : '' ?>>Élèves</option>
+                    <option value="paiement" <?= $contexte_filter === 'paiement' ? 'selected' : '' ?>>Paiements</option>
+                    <option value="incident" <?= $contexte_filter === 'incident' ? 'selected' : '' ?>>Incidents</option>
+                    <option value="communication" <?= $contexte_filter === 'communication' ? 'selected' : '' ?>>Communications</option>
+                    <option value="general" <?= $contexte_filter === 'general' ? 'selected' : '' ?>>Général</option>
+                </select>
+            </div>
+            <div class="col-md-3">
                 <select name="document_id" class="form-select">
                     <option value="">Tous les documents</option>
                     <?php foreach ($documents as $doc): ?>
@@ -74,7 +90,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
             <table class="table table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th>Document</th>
+                        <th>Contexte</th>
+                        <th>Cible</th>
                         <th>Utilisateur</th>
                         <th>Contenu</th>
                         <th>Date</th>
@@ -83,12 +100,22 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
                 </thead>
                 <tbody>
                     <?php if (empty($commentaires)): ?>
-                        <tr><td colspan="5" class="text-center text-muted py-4">Aucun commentaire trouvé.</td></tr>
-                    <?php else: foreach ($commentaires as $c): ?>
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucun commentaire trouvé.</td></tr>
+                    <?php else: foreach ($commentaires as $c): 
+                        $ctx = $c['contexte'] ?? 'document';
+                        $ctxLabels = ['document'=>'Document','eleve'=>'Élève','paiement'=>'Paiement','incident'=>'Incident','communication'=>'Communication','general'=>'Général'];
+                        $ctxIcons = ['document'=>'fa-file-lines','eleve'=>'fa-user-graduate','paiement'=>'fa-coins','incident'=>'fa-triangle-exclamation','communication'=>'fa-bullhorn','general'=>'fa-comment'];
+                    ?>
                         <tr>
                             <td class="small">
-                                <i class="fa-solid fa-file-lines text-primary me-1"></i>
-                                <?= e($c['nom_fichier'] ?? '—') ?>
+                                <span class="badge bg-light text-dark"><i class="fa-solid <?= $ctxIcons[$ctx] ?? 'fa-comment' ?> me-1"></i><?= e($ctxLabels[$ctx] ?? ucfirst($ctx)) ?></span>
+                            </td>
+                            <td class="small">
+                                <?php if ($ctx === 'document'): ?>
+                                    <i class="fa-solid fa-file-lines text-primary me-1"></i><?= e($c['nom_fichier'] ?? '—') ?>
+                                <?php else: ?>
+                                    #<?= (int)($c['contexte_id'] ?? $c['document_id'] ?? 0) ?>
+                                <?php endif; ?>
                             </td>
                             <td class="small">
                                 <div class="d-flex align-items-center gap-2">

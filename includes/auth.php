@@ -233,7 +233,7 @@ function verify_2fa(string $code): array
         'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
         ['id' => $userId]
     );
-    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
+    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
 
     start_user_session($userId);
     return [true, 'Authentification à deux facteurs réussie.'];

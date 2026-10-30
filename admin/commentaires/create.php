@@ -26,17 +26,32 @@ $eleves = prepareQuery(
     "SELECT id, nom, prenom, matricule FROM eleves ORDER BY nom, prenom"
 )->fetchAll();
 
-$incidents = prepareQuery(
-    "SELECT id, type_incident, date_incident FROM incidents ORDER BY date_incident DESC LIMIT 100"
-)->fetchAll();
+$incidents = [];
+try {
+    $incidents = prepareQuery(
+        "SELECT id, type_incident, date_incident FROM incidents ORDER BY date_incident DESC LIMIT 100"
+    )->fetchAll();
+} catch (Exception $e) {
+    $incidents = [];
+}
 
-$paiements = prepareQuery(
-    "SELECT id, montant, date_paiement, recu_numero FROM paiements ORDER BY date_paiement DESC LIMIT 100"
-)->fetchAll();
+$paiements = [];
+try {
+    $paiements = prepareQuery(
+        "SELECT id, montant, date_paiement, recu_numero FROM paiements ORDER BY date_paiement DESC LIMIT 100"
+    )->fetchAll();
+} catch (Exception $e) {
+    $paiements = [];
+}
 
-$communications = prepareQuery(
-    "SELECT id, titre FROM communications ORDER BY date_publication DESC LIMIT 100"
-)->fetchAll();
+$communications = [];
+try {
+    $communications = prepareQuery(
+        "SELECT id, titre FROM communications ORDER BY date_publication DESC LIMIT 100"
+    )->fetchAll();
+} catch (Exception $e) {
+    $communications = [];
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {

@@ -9,7 +9,7 @@ if (!isset($_SESSION['pending_2fa'])) {
     header('Location: ' . BASE_URL . 'index.php');
     exit;
 }
-if (is_logged_in()) {
+if (is_logged_in() && empty($_SESSION['pending_2fa'])) {
     header('Location: ' . BASE_URL);
     exit;
 }

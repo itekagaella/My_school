@@ -14,6 +14,17 @@ if (!defined('BASE_URL')) {
     $relativeToDocRoot = '';
     if ($docRoot !== '' && $appDir !== '' && strpos($appDir . '/', $docRoot . '/') === 0) {
         $relativeToDocRoot = rtrim(str_replace('\\', '/', substr($appDir, strlen($docRoot))), '/');
+    } else {
+        // Fallback: détecter depuis SCRIPT_NAME/REQUEST_URI
+        $script = $_SERVER['SCRIPT_NAME'] ?? $_SERVER['PHP_SELF'] ?? '';
+        if ($script !== '') {
+            $parts = explode('/', trim($script, '/'));
+            if (count($parts) >= 2 && in_array($parts[0], ['My_School', 'myschool', 'school'])) {
+                $relativeToDocRoot = '/' . $parts[0];
+            } elseif (count($parts) >= 1 && $parts[0] !== 'index.php' && $parts[0] !== 'admin') {
+                // Peut être dans un sous-dossier
+            }
+        }
     }
 
     $base = $scheme . '://' . $host . $relativeToDocRoot . '/';

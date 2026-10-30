@@ -47,7 +47,16 @@ if (is_logged_in() && empty($_SESSION['pending_2fa'])) {
                     $result = verify_2fa($code);
                     if ($result[0]) {
                         set_flash('success', 'Authentification réussie.');
-                        $role = $_SESSION['user_role'] ?? $_SESSION['pending_2fa_user_role'] ?? current_role() ?? '';
+                        $role = $_SESSION['user_role'] ?? $_SESSION['pending_2fa_user_role'] ?? null;
+                        if (!$role && isset($_SESSION['user_id'])) {
+                            try {
+                                $r = prepareQuery('SELECT role FROM utilisateurs WHERE id = :id', ['id' => $_SESSION['user_id']])->fetch();
+                                $role = $r['role'] ?? '';
+                            } catch (Throwable $e) {
+                                $role = '';
+                            }
+                        }
+                        $role = $role ?: '';
                         $redirects = [
                             'admin' => 'admin/index.php',
                             'eleve' => 'client/eleve/index.php',
@@ -58,7 +67,10 @@ if (is_logged_in() && empty($_SESSION['pending_2fa'])) {
                             'discipline' => 'client/discipline/index.php',
                         ];
                         unset($_SESSION['pending_2fa_user_role']);
-                        $target = $redirects[$role] ?? role_home($role);
+                        $target = $redirects[$role] ?? ('client/' . $role . '/index.php');
+                        if ($role === 'admin') {
+                            $target = 'admin/index.php';
+                        }
                         header('Location: ' . BASE_URL . $target);
                         exit;
                     } else {

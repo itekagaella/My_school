@@ -1,20 +1,31 @@
 <?php
 /**
- * Archivage électronique / GED - Ajouter
+ * Archivage électronique / GED - Ajouter depuis documents existants
  */
 require_once __DIR__ . '/../../includes/auth.php';
 require_role(['admin']);
 require_permission('documents.manage');
 
-$page_title = 'Verser un document - Archivage électronique';
+$page_title = 'Archiver un document existant';
 $active_menu = 'archivage_electronique';
 
 $types = ['PV' => 'Procès-verbal', 'Courrier' => 'Courrier', 'Rapport' => 'Rapport', 'Decision' => 'Décision', 'Liste' => 'Liste officielle', 'Autre' => 'Autre'];
+
+// Liste des documents existants non encore archivés
+$documents = prepareQuery(
+    "SELECT d.id, d.nom_fichier, d.type_fichier, d.taille_fichier, d.date_creation, d.description, u.nom, u.prenom
+     FROM documents d
+     LEFT JOIN utilisateurs u ON u.id = d.proprietaire_id
+     WHERE d.statut = 'actif'
+       AND NOT EXISTS (SELECT 1 FROM archives_electroniques ae WHERE ae.document_id = d.id AND ae.statut = 'actif')
+     ORDER BY d.date_creation DESC"
+)->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify($_POST['csrf_token'] ?? null)) {
         set_flash('error', 'Session expirée.');
     } else {
+        $document_id = (int)($_POST['document_id'] ?? 0);
         $titre = clean_input($_POST['titre'] ?? '');
         $type_document = clean_input($_POST['type_document'] ?? '');
         $annee_scolaire = clean_input($_POST['annee_scolaire'] ?? '');
@@ -22,23 +33,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $description = clean_input($_POST['description'] ?? '');
         $mots_cles = clean_input($_POST['mots_cles'] ?? '');
 
-        if (empty($titre) || empty($type_document)) {
-            set_flash('error', 'Le titre et le type de document sont obligatoires.');
-        } elseif (empty($_FILES['fichier']['name'])) {
-            set_flash('error', 'Veuillez sélectionner un fichier à verser.');
+        if (!$document_id || empty($titre) || empty($type_document)) {
+            set_flash('error', 'Le document, le titre et le type sont obligatoires.');
         } else {
-            $allowed = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'];
-            $ext = strtolower(pathinfo($_FILES['fichier']['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, $allowed, true)) {
-                set_flash('error', 'Type de fichier non autorisé.');
+            $doc = prepareQuery('SELECT * FROM documents WHERE id = :id AND statut = \'actif\'', ['id' => $document_id])->fetch();
+            if (!$doc) {
+                set_flash('error', 'Document introuvable.');
             } else {
-                $uploadDir = ROOT_PATH . 'assets/uploads/archives-electroniques/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                $filename = 'GED_' . date('YmdHis') . '_' . uniqid() . '.' . $ext;
-                $filepath = $uploadDir . $filename;
-
-                if (move_uploaded_file($_FILES['fichier']['tmp_name'], $filepath)) {
-                    // Générer une référence
+                // Vérifier s'il n'est pas déjà archivé
+                $exists = prepareQuery('SELECT id FROM archives_electroniques WHERE document_id = :id AND statut = \'actif\'', ['id' => $document_id])->fetch();
+                if ($exists) {
+                    set_flash('error', 'Ce document est déjà archivé électroniquement.');
+                } else {
                     $ref = 'GED-' . date('Y') . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
                     while (prepareQuery('SELECT id FROM archives_electroniques WHERE reference = :r', ['r' => $ref])->fetch()) {
                         $ref = 'GED-' . date('Y') . '-' . str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
@@ -46,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     try {
                         prepareQuery(
-                            "INSERT INTO archives_electroniques (reference, titre, type_document, annee_scolaire, date_document, description, mots_cles, fichier_nom, fichier_chemin, fichier_type, fichier_taille, vers_par)
-                             VALUES (:ref, :titre, :type, :annee, :date_doc, :desc, :mots, :f_nom, :f_chemin, :f_type, :f_taille, :vers_par)",
+                            "INSERT INTO archives_electroniques (reference, titre, type_document, annee_scolaire, date_document, description, mots_cles, fichier_nom, fichier_chemin, fichier_type, fichier_taille, vers_par, document_id)
+                             VALUES (:ref, :titre, :type, :annee, :date_doc, :desc, :mots, :f_nom, :f_chemin, :f_type, :f_taille, :vers_par, :document_id)",
                             [
                                 'ref' => $ref,
                                 'titre' => $titre,
@@ -56,23 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'date_doc' => $date_document ?: null,
                                 'desc' => $description ?: null,
                                 'mots' => $mots_cles ?: null,
-                                'f_nom' => $_FILES['fichier']['name'],
-                                'f_chemin' => 'assets/uploads/archives-electroniques/' . $filename,
-                                'f_type' => $ext,
-                                'f_taille' => $_FILES['fichier']['size'],
-                                'vers_par' => $_SESSION['user_id']
+                                'f_nom' => $doc['nom_fichier'],
+                                'f_chemin' => $doc['chemin_fichier'],
+                                'f_type' => $doc['type_fichier'],
+                                'f_taille' => $doc['taille_fichier'],
+                                'vers_par' => $_SESSION['user_id'],
+                                'document_id' => $document_id
                             ]
                         );
-                        log_activity('archives_electroniques.ajout', 'Versement du document ' . $ref . ' - ' . $titre);
-                        set_flash('success', 'Document versé dans l\'archivage électronique avec succès. Référence : ' . $ref);
+                        log_activity('archives_electroniques.ajout', 'Archivage électronique du document ' . $doc['nom_fichier'] . ' (' . $ref . ')');
+                        set_flash('success', 'Document archivé électroniquement avec succès. Référence : ' . $ref);
                         header('Location: index.php');
                         exit;
                     } catch (Exception $e) {
-                        @unlink($filepath);
-                        set_flash('error', 'Erreur lors de l\'enregistrement.');
+                        set_flash('error', 'Erreur lors de l\'archivage.');
                     }
-                } else {
-                    set_flash('error', 'Erreur lors du téléversement du fichier.');
                 }
             }
         }
@@ -86,52 +90,75 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="fa-solid fa-file-arrow-up me-2"></i>Verser un document dans l'archivage électronique</span>
+        <span><i class="fa-solid fa-archive me-2"></i>Archiver un document existant du système</span>
         <a href="index.php" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left me-1"></i>Retour à la liste</a>
     </div>
     <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-            <?= csrf_field() ?>
-            <div class="row g-3">
-                <div class="col-md-8">
-                    <label class="form-label">Titre du document <span class="text-danger">*</span></label>
-                    <input type="text" name="titre" class="form-control" required>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Type de document <span class="text-danger">*</span></label>
-                    <select name="type_document" class="form-select" required>
-                        <option value="">Sélectionner...</option>
-                        <?php foreach ($types as $k => $v): ?>
-                            <option value="<?= $k ?>"><?= $v ?></option>
+        <?php if (empty($documents)): ?>
+            <div class="alert alert-info">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Tous les documents actifs sont déjà archivés électroniquement, ou aucun document n'existe.
+                <br><a href="../documents/index.php" class="alert-link">Aller au module Documents</a>
+            </div>
+        <?php else: ?>
+            <form method="post">
+                <?= csrf_field() ?>
+                <div class="mb-3">
+                    <label class="form-label">Sélectionner le document à archiver <span class="text-danger">*</span></label>
+                    <select name="document_id" class="form-select" required id="docSelect">
+                        <option value="">-- Choisir un document --</option>
+                        <?php foreach ($documents as $d): ?>
+                            <option value="<?= $d['id'] ?>" data-nom="<?= e($d['nom_fichier']) ?>">
+                                <?= e($d['nom_fichier']) ?> (<?= strtoupper($d['type_fichier']) ?>, <?= round($d['taille_fichier']/1024, 1) ?> Ko)
+                            </option>
                         <?php endforeach; ?>
                     </select>
+                    <small class="text-muted">Seuls les documents déjà présents dans le module "Documents" sont proposés.</small>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Année scolaire</label>
-                    <input type="text" name="annee_scolaire" class="form-control" placeholder="Ex: 2025-2026">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Titre dans l'archivage électronique <span class="text-danger">*</span></label>
+                        <input type="text" name="titre" class="form-control" required id="titreInput">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Type de document <span class="text-danger">*</span></label>
+                        <select name="type_document" class="form-select" required>
+                            <option value="">Sélectionner...</option>
+                            <?php foreach ($types as $k => $v): ?>
+                                <option value="<?= $k ?>"><?= $v ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Année scolaire</label>
+                        <input type="text" name="annee_scolaire" class="form-control" placeholder="Ex: 2025-2026">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date du document</label>
+                        <input type="date" name="date_document" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Mots-clés</label>
+                        <input type="text" name="mots_cles" class="form-control" placeholder="Ex: conseil classe, discipline, PV">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Description / Observations</label>
+                        <textarea name="description" class="form-control" rows="3"></textarea>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Date du document</label>
-                    <input type="date" name="date_document" class="form-control">
+                <div class="mt-3">
+                    <button class="btn btn-primary"><i class="fa-solid fa-archive me-1"></i>Archiver électroniquement</button>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Fichier <span class="text-danger">*</span></label>
-                    <input type="file" name="fichier" class="form-control" required>
-                    <small class="text-muted">PDF, Word, Excel, Images, TXT (max 10 Mo)</small>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Mots-clés</label>
-                    <input type="text" name="mots_cles" class="form-control" placeholder="Ex: conseil classe, discipline, PV">
-                </div>
-                <div class="col-md-12">
-                    <label class="form-label">Description / Observations</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
-                </div>
-            </div>
-            <div class="mt-3">
-                <button class="btn btn-primary"><i class="fa-solid fa-upload me-1"></i>Verser dans l'archivage</button>
-            </div>
-        </form>
+            </form>
+            <script>
+            document.getElementById('docSelect').addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt.value) {
+                    document.getElementById('titreInput').value = opt.getAttribute('data-nom');
+                }
+            });
+            </script>
+        <?php endif; ?>
     </div>
 </div>
 

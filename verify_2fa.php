@@ -2,11 +2,14 @@
 /**
  * Vérification de l'authentification à deux facteurs (2FA)
  */
+require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 
-// Rediriger si pas de 2FA en attente
+// Si pas de 2FA en attente
 if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
-    if (isset($_SESSION['user_id']) && empty($_SESSION['pending_2fa'])) {
+    if (isset($_SESSION['user_id'])) {
         $role = $_SESSION['user_role'] ?? '';
         if (!$role) {
             try {
@@ -24,11 +27,118 @@ if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
             'finance' => 'client/finance/index.php',
             'discipline' => 'client/discipline/index.php',
         ];
-        header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+        $target = $redirects[$role] ?? 'index.php';
+        header('Location: ' . BASE_URL . $target);
         exit;
     }
     header('Location: ' . BASE_URL . 'index.php');
     exit;
+}
+
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+        $error = 'Session expirée, veuillez réessayer.';
+    } else {
+        $code = clean_input($_POST['code'] ?? '');
+        if (empty($code)) {
+            $error = 'Veuillez saisir le code.';
+        } else {
+            // Vérification directe sans passer par verify_2fa() qui peut causer des boucles
+            if (empty($_SESSION['2fa_attempts'])) $_SESSION['2fa_attempts'] = ['count' => 0, 'start' => time()];
+            if ($_SESSION['2fa_attempts']['count'] >= MAX_LOGIN_ATTEMPTS) {
+                if (time() - $_SESSION['2fa_attempts']['start'] < LOCKOUT_MINUTES * 60) {
+                    $remaining = ceil((LOCKOUT_MINUTES * 60 - (time() - $_SESSION['2fa_attempts']['start'])) / 60);
+                    $error = "Trop de tentatives 2FA. Réessayez dans {$remaining} minute(s).";
+                } else {
+                    $_SESSION['2fa_attempts'] = ['count' => 0, 'start' => time()];
+                }
+            }
+
+            if (empty($error)) {
+                $userId = $_SESSION['pending_2fa'];
+                try {
+                    $user = prepareQuery(
+                        'SELECT * FROM utilisateurs WHERE id = :id',
+                        ['id' => $userId]
+                    )->fetch();
+                } catch (Throwable $e) {
+                    $user = null;
+                }
+
+                if (!$user || empty($user['dernier_code_otp']) || $user['dernier_code_exp'] < date('Y-m-d H:i:s', time())) {
+                    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
+                    header('Location: ' . BASE_URL . 'index.php');
+                    exit;
+                }
+
+                if (!password_verify($code, $user['dernier_code_otp'])) {
+                    $_SESSION['2fa_attempts']['count']++;
+                    $error = 'Code de vérification incorrect (tentative ' . $_SESSION['2fa_attempts']['count'] . '/' . MAX_LOGIN_ATTEMPTS . ').';
+                } else {
+                    // Code valide - créer session directement
+                    try {
+                        prepareQuery(
+                            'UPDATE utilisateurs SET dernier_code_otp = NULL, dernier_code_exp = NULL WHERE id = :id',
+                            ['id' => $userId]
+                        );
+                    } catch (Throwable $e) {
+                    }
+
+                    // Nettoyer session 2FA
+                    unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta']);
+
+                    // Créer nouvelle session propre
+                    @session_regenerate_id(true);
+                    $_SESSION = [];
+                    @session_regenerate_id(true);
+                    $_SESSION['user_id'] = $userId;
+                    $_SESSION['user_role'] = $user['role'] ?? '';
+                    $_SESSION['last_activity'] = time();
+                    $_SESSION['login_time'] = time();
+
+                    // Essayer de créer token DB sans bloquer
+                    try {
+                        $token = bin2hex(random_bytes(32));
+                        prepareQuery(
+                            'INSERT INTO sessions_utilisateur (user_id, token, ip_address, user_agent, expires_at)
+                             VALUES (:uid, :token, :ip, :ua, NOW() + make_interval(secs => :ttl))',
+                            [
+                                'uid' => $userId,
+                                'token' => hash('sha256', $token),
+                                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                                'ua' => $_SERVER['HTTP_USER_AGENT'] ?? '',
+                                'ttl' => SESSION_TIMEOUT,
+                            ]
+                        );
+                        $_SESSION['session_token'] = hash('sha256', $token);
+                    } catch (Throwable $e) {
+                        unset($_SESSION['session_token']);
+                    }
+
+                    try {
+                        log_activity('auth.login', 'Connexion réussie');
+                    } catch (Throwable $e) {
+                    }
+
+                    unset($_SESSION['pending_2fa_user_role']);
+
+                    $redirects = [
+                        'admin' => 'admin/index.php',
+                        'eleve' => 'client/eleve/index.php',
+                        'prof'  => 'client/prof/index.php',
+                        'personnel' => 'client/personnel/index.php',
+                        'surveillant' => 'client/surveillant/index.php',
+                        'finance' => 'client/finance/index.php',
+                        'discipline' => 'client/discipline/index.php',
+                    ];
+                    $target = $redirects[$_SESSION['user_role']] ?? 'index.php';
+                    header('Location: ' . BASE_URL . $target);
+                    exit;
+                }
+            }
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -37,9 +147,7 @@ if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vérification - My_School</title>
-    <!-- Google Fonts : Plus Jakarta Sans (local) -->
     <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
-    <!-- Font Awesome (local) -->
     <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
@@ -51,65 +159,17 @@ if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
             <p>Entrez le code à 6 chiffres envoyé par email</p>
         </div>
 
-        <?php
-        $error = '';
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-                $error = 'Session expirée, veuillez réessayer.';
-            } else {
-                $code = clean_input($_POST['code'] ?? '');
-                if (empty($code)) {
-                    $error = 'Veuillez saisir le code.';
-                } else {
-                    $result = verify_2fa($code);
-                    if ($result[0]) {
-                        set_flash('success', 'Authentification réussie.');
-                        $role = $_SESSION['user_role'] ?? $_SESSION['pending_2fa_user_role'] ?? null;
-                        if (!$role && isset($_SESSION['user_id'])) {
-                            try {
-                                $r = prepareQuery('SELECT role FROM utilisateurs WHERE id = :id', ['id' => $_SESSION['user_id']])->fetch();
-                                $role = $r['role'] ?? '';
-                            } catch (Throwable $e) {
-                                $role = '';
-                            }
-                        }
-                        $role = $role ?: '';
-                        $redirects = [
-                            'admin' => 'admin/index.php',
-                            'eleve' => 'client/eleve/index.php',
-                            'prof'  => 'client/prof/index.php',
-                            'personnel' => 'client/personnel/index.php',
-                            'surveillant' => 'client/surveillant/index.php',
-                            'finance' => 'client/finance/index.php',
-                            'discipline' => 'client/discipline/index.php',
-                        ];
-                        unset($_SESSION['pending_2fa_user_role']);
-                        $target = $redirects[$role] ?? ('client/' . $role . '/index.php');
-                        if ($role === 'admin') {
-                            $target = 'admin/index.php';
-                        }
-                        header('Location: ' . BASE_URL . $target);
-                        exit;
-                    } else {
-                        $error = $result[1];
-                    }
-                }
-            }
-        }
-        ?>
-
         <?php if (!empty($_SESSION['otp_demo']) && $_SESSION['otp_demo']['exp'] > time()): ?>
-            <?php if (demo_disclose()): ?>
+            <?php if (function_exists('demo_disclose') && demo_disclose()): ?>
                 <div class="alert alert-info">
                     <i class="fa-solid fa-flask me-1"></i>
-                    <strong>Mode démo :</strong> aucun serveur SMTP configuré (<code>MAIL_ENABLED=false</code>).
+                    <strong>Mode démo :</strong> aucun serveur SMTP configuré.
                     Voici votre code de vérification : <strong class="fs-5"><?= e($_SESSION['otp_demo']['code']) ?></strong>
                 </div>
             <?php else: ?>
                 <div class="alert alert-info">
                     <i class="fa-solid fa-circle-info me-1"></i>
-                    Aucun serveur SMTP n'est configuré : le code est consultable par
-                    l'administrateur (Admin &gt; Journal &gt; Boîte email).
+                    Aucun serveur SMTP n'est configuré : le code est consultable par l'administrateur.
                 </div>
             <?php endif; ?>
         <?php endif; ?>

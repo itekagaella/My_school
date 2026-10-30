@@ -1,4 +1,4 @@
-`<?php
+<?php
 /**
  * Configuration principale du système My_School
  */
@@ -26,14 +26,15 @@ define('ROOT_PATH', dirname(__DIR__) . '/');
 // Configuration sessions (sécurisées)
 session_name('MYSCHOOL_SESSION');
 ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_secure', '0'); // Met à '1' en production HTTPS
+$__is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+ini_set('session.cookie_secure', $__is_https ? '1' : '0');
 ini_set('session.use_only_cookies', '1');
 ini_set('session.gc_maxlifetime', '1800'); // 30 minutes
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'httponly' => true,
-    'secure' => false,
+    'secure' => $__is_https,
     'samesite' => 'Lax'
 ]);
 

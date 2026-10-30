@@ -347,15 +347,25 @@ function current_user(): ?array
     static $user = false;
     if ($user === false) {
         // Valider le token de session en base (révocation possible côté serveur)
-        if (!validate_session_token()) {
-            logout('Session expirée');
+        try {
+            if (!validate_session_token()) {
+                if (isset($_SESSION['session_token'])) {
+                    logout('Session expirée');
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignorer
         }
-        $user = prepareQuery(
-            'SELECT * FROM utilisateurs WHERE id = :id AND actif = TRUE',
-            ['id' => $_SESSION['user_id']]
-        )->fetch();
-        if (!$user) {
-            logout('Session invalide');
+        try {
+            $user = prepareQuery(
+                'SELECT * FROM utilisateurs WHERE id = :id AND actif = TRUE',
+                ['id' => $_SESSION['user_id']]
+            )->fetch();
+            if (!$user) {
+                return null;
+            }
+        } catch (Throwable $e) {
+            return null;
         }
     }
     return $user ?: null;

@@ -84,6 +84,7 @@ function admin_menu_item(string $key, string $label, string $icon, string $href,
             <li class="nav-section">Gestion documentaire</li>
             <?= admin_menu_item('documents', 'Documents', 'fa-folder-open', 'admin/documents/index.php', $active_menu) ?>
             <?= admin_menu_item('archivage_electronique', 'Archivage électronique', 'fa-archive', 'admin/archivage-electronique/index.php', $active_menu) ?>
+            <?= admin_menu_item('recherche_documentaire', 'Recherche documentaire', 'fa-magnifying-glass', 'admin/recherche-documentaire/index.php', $active_menu) ?>
             <?= admin_menu_item('commentaires', 'Commentaires', 'fa-comment-dots', 'admin/commentaires/index.php', $active_menu) ?>
 
             <li class="nav-section">Rapports & Statistiques</li>

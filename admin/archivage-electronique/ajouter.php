@@ -75,7 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header('Location: index.php');
                         exit;
                     } catch (Exception $e) {
-                        set_flash('error', 'Erreur lors de l\'archivage.');
+                        set_flash('error', 'Erreur lors de l\'archivage: ' . $e->getMessage());
+                    } catch (Throwable $e) {
+                        set_flash('error', 'Erreur lors de l\'archivage: ' . $e->getMessage());
                     }
                 }
             }

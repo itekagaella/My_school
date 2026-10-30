@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_login();
-if (current_role() === 'admin') { header('Location: ' . BASE_URL . 'admin/index.php'); exit; }
 $user = current_user();
 $page_title = 'Chat';
 $active_menu = 'chat';
@@ -93,7 +92,11 @@ $autres_users = prepareQuery(
 )->fetchAll();
 
 require_once __DIR__ . '/../includes/header.php';
-require_once __DIR__ . '/../includes/sidebar_client.php';
+if ($user['role'] === 'admin') {
+    require_once __DIR__ . '/../includes/sidebar_admin.php';
+} else {
+    require_once __DIR__ . '/../includes/sidebar_client.php';
+}
 ?>
 <?php display_flash(); ?>
 

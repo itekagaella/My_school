@@ -162,6 +162,7 @@ if (is_logged_in()) {
                 <a href="index.php" class="fw-semibold text-decoration-none"><i class="fa-solid fa-arrow-left me-1"></i>Connexion à l'espace client</a>
             <?php else: ?>
                 Besoin d'un compte ? Contactez l'administrateur.
+                <br><a href="index.php?profil=admin" class="fw-semibold text-decoration-none">Espace administration</a>
             <?php endif; ?>
         </p>
     </div>

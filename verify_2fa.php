@@ -4,13 +4,30 @@
  */
 require_once __DIR__ . '/includes/auth.php';
 
-// Rediriger si pas de 2FA en attente ou déjà connecté
-if (!isset($_SESSION['pending_2fa'])) {
+// Rediriger si pas de 2FA en attente
+if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
+    if (isset($_SESSION['user_id']) && empty($_SESSION['pending_2fa'])) {
+        $role = $_SESSION['user_role'] ?? '';
+        if (!$role) {
+            try {
+                $r = prepareQuery('SELECT role FROM utilisateurs WHERE id = :id', ['id' => $_SESSION['user_id']])->fetch();
+                $role = $r['role'] ?? '';
+            } catch (Throwable $e) {
+            }
+        }
+        $redirects = [
+            'admin' => 'admin/index.php',
+            'eleve' => 'client/eleve/index.php',
+            'prof'  => 'client/prof/index.php',
+            'personnel' => 'client/personnel/index.php',
+            'surveillant' => 'client/surveillant/index.php',
+            'finance' => 'client/finance/index.php',
+            'discipline' => 'client/discipline/index.php',
+        ];
+        header('Location: ' . BASE_URL . ($redirects[$role] ?? 'index.php'));
+        exit;
+    }
     header('Location: ' . BASE_URL . 'index.php');
-    exit;
-}
-if (is_logged_in() && empty($_SESSION['pending_2fa'])) {
-    header('Location: ' . BASE_URL);
     exit;
 }
 ?>

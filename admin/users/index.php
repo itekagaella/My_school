@@ -49,8 +49,8 @@ require_once __DIR__ . '/../../includes/sidebar_admin.php';
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
         <h4 class="mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>Utilisateurs <span class="text-muted fs-6">(<?= $total ?>)</span></h4>
+        <small class="text-muted">La création des utilisateurs se fait depuis les modules Élèves, Professeurs ou Personnel</small>
     </div>
-    <a href="create.php" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Nouvel utilisateur</a>
 </div>
 
 <div class="card">

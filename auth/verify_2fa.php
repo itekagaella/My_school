@@ -2,10 +2,10 @@
 /**
  * Vérification de l'authentification à deux facteurs (2FA)
  */
-require_once __DIR__ . '/config/config.php';
-require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/config/database.php';
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 // Si pas de 2FA en attente
 if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
@@ -142,9 +142,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vérification - My_School</title>
-    <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
-    <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="../assets/vendor/fonts/googlefonts.css" rel="stylesheet">
+    <link href="../assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-card">
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="text-center mt-3">
-            <a href="auth/logout.php" class="small text-decoration-none">Annuler et se déconnecter</a>
+            <a href="logout.php" class="small text-decoration-none">Annuler et se déconnecter</a>
         </div>
     </div>
 </body>

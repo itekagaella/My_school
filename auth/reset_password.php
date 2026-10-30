@@ -2,7 +2,7 @@
 /**
  * Réinitialisation du mot de passe avec OTP
  */
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 if (is_logged_in()) {
     header('Location: ' . BASE_URL);
@@ -29,9 +29,9 @@ if (empty($email)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réinitialiser le mot de passe - My_School</title>
-    <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
-    <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="../assets/vendor/fonts/googlefonts.css" rel="stylesheet">
+    <link href="../assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-card">

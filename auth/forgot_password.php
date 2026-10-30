@@ -2,7 +2,7 @@
 /**
  * Demande de réinitialisation de mot de passe
  */
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 
 if (is_logged_in()) header('Location: ' . BASE_URL);
 ?>
@@ -13,10 +13,10 @@ if (is_logged_in()) header('Location: ' . BASE_URL);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mot de passe oublié - My_School</title>
     <!-- Google Fonts : Plus Jakarta Sans (local) -->
-    <link href="assets/vendor/fonts/googlefonts.css" rel="stylesheet">
+    <link href="../assets/vendor/fonts/googlefonts.css" rel="stylesheet">
     <!-- Font Awesome (local) -->
-    <link href="assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
-    <link href="assets/css/style.css" rel="stylesheet">
+    <link href="../assets/vendor/fontawesome/css/all.min.css" rel="stylesheet">
+    <link href="../assets/css/style.css" rel="stylesheet">
 </head>
 <body class="auth-page">
     <div class="auth-card">

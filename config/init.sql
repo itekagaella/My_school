@@ -612,7 +612,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+
 -- ---------- Calcul de moyenne d'un élève (avec coefficients) ----------
+
 CREATE OR REPLACE FUNCTION sp_calculer_moyenne(
     p_eleve_id INT,
     p_periode  DATE DEFAULT NULL
@@ -998,6 +1001,56 @@ INSERT INTO themes (nom_theme, css_path, actif) VALUES
 ('Thème Bleu',       'assets/css/theme-blue.css', FALSE),
 ('Thème Vert',       'assets/css/theme-green.css', FALSE)
 ON CONFLICT DO NOTHING;
+
+-- ============================================================
+-- TRIGGERS
+-- ============================================================
+
+-- Mise à jour automatique de updated_at
+CREATE OR REPLACE FUNCTION fn_update_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_users_update ON utilisateurs;
+CREATE TRIGGER trg_users_update BEFORE UPDATE ON utilisateurs
+FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
+
+DROP TRIGGER IF EXISTS trg_eleves_update ON eleves;
+CREATE TRIGGER trg_eleves_update BEFORE UPDATE ON eleves
+FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
+
+DROP TRIGGER IF EXISTS trg_profs_update ON profs;
+CREATE TRIGGER trg_profs_update BEFORE UPDATE ON profs
+FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
+
+DROP TRIGGER IF EXISTS trg_horaires_update ON horaires;
+CREATE TRIGGER trg_horaires_update BEFORE UPDATE ON horaires
+FOR EACH ROW EXECUTE FUNCTION fn_update_timestamp();
+
+-- Journaliser automatiquement la modification des notes importantes
+CREATE OR REPLACE FUNCTION fn_log_note_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO journal_activites (action, details)
+        VALUES ('note.ajout', 'Note ajoutée pour élève ' || NEW.eleve_id ||
+                ' matière ' || NEW.matiere_id || ' : ' || NEW.note);
+    ELSIF TG_OP = 'UPDATE' THEN
+        INSERT INTO journal_activites (action, details)
+        VALUES ('note.modification', 'Note modifiée pour élève ' || NEW.eleve_id ||
+                ' : ' || OLD.note || ' -> ' || NEW.note);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notes_log ON notes;
+CREATE TRIGGER trg_notes_log AFTER INSERT OR UPDATE ON notes
+FOR EACH ROW EXECUTE FUNCTION fn_log_note_changes();
 
 -- ============================================================
 -- TRIGGERS

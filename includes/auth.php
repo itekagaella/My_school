@@ -196,7 +196,10 @@ function start_user_session(int $userId): void
 function verify_2fa(string $code): array
 {
     if (!isset($_SESSION['pending_2fa'])) {
-        return [false, 'Session 2FA expirée.'];
+        if (isset($_SESSION['user_id'])) {
+            return [false, 'Session déjà connectée. Veuillez actualiser.'];
+        }
+        return [false, 'Session 2FA expirée. Veuillez vous reconnecter.'];
     }
 
     // Limite de tentatives 2FA (5 max / fenêtre de 5 min)

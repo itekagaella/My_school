@@ -87,42 +87,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($contexte === 'document' && $contexte_id > 0) {
                     $doc = prepareQuery('SELECT u.id FROM documents d JOIN utilisateurs u ON u.id = d.proprietaire_id WHERE d.id = :id', ['id' => $contexte_id])->fetch();
                     if ($doc && $doc['id'] != $currentUser['id']) {
-                        notify((int)$doc['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté un document.', 'info', BASE_URL . 'admin/documents/view.php?id=' . $contexte_id);
+                        notify((int)$doc['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté un document.', 'info', 'admin/documents/view.php?id=' . $contexte_id);
                     }
                     $users = prepareQuery('SELECT DISTINCT user_id FROM commentaires WHERE document_id = :id AND user_id != :uid', ['id' => $contexte_id, 'uid' => $currentUser['id']])->fetchAll();
                     foreach ($users as $u) {
-                        notify((int)$u['user_id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a répondu dans la discussion du document.', 'info', BASE_URL . 'admin/documents/view.php?id=' . $contexte_id);
+                        notify((int)$u['user_id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a répondu dans la discussion du document.', 'info', 'admin/documents/view.php?id=' . $contexte_id);
                     }
                 } elseif ($contexte === 'eleve' && $contexte_id > 0) {
                     $eleve = prepareQuery('SELECT utilisateur_id FROM eleves WHERE id = :id', ['id' => $contexte_id])->fetch();
                     if ($eleve && $eleve['utilisateur_id'] && $eleve['utilisateur_id'] != $currentUser['id']) {
-                        notify((int)$eleve['utilisateur_id'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a ajouté un commentaire concernant votre dossier.', 'info', BASE_URL . 'client/eleve/index.php');
+                        notify((int)$eleve['utilisateur_id'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a ajouté un commentaire concernant votre dossier.', 'info', 'client/eleve/index.php');
                     }
                     $users = prepareQuery("SELECT DISTINCT user_id FROM commentaires WHERE COALESCE(contexte_id, document_id) = :id AND contexte = 'eleve' AND user_id != :uid", ['id' => $contexte_id, 'uid' => $currentUser['id']])->fetchAll();
                     foreach ($users as $u) {
-                        notify((int)$u['user_id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté le dossier élève.', 'info', BASE_URL . 'admin/eleves/view.php?id=' . $contexte_id);
+                        notify((int)$u['user_id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté le dossier élève.', 'info', 'admin/eleves/view.php?id=' . $contexte_id);
                     }
                 } elseif ($contexte === 'incident' && $contexte_id > 0) {
                     $inc = prepareQuery('SELECT signale_par FROM incidents WHERE id = :id', ['id' => $contexte_id])->fetch();
                     if ($inc && $inc['signale_par'] && $inc['signale_par'] != $currentUser['id']) {
-                        notify((int)$inc['signale_par'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a commenté un incident.', 'info', BASE_URL . 'client/surveillant/incidents.php');
+                        notify((int)$inc['signale_par'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a commenté un incident.', 'info', 'client/surveillant/incidents.php');
                     }
                 } elseif ($contexte === 'paiement' && $contexte_id > 0) {
                     $pai = prepareQuery('SELECT e.utilisateur_id FROM paiements p JOIN eleves e ON e.id = p.eleve_id WHERE p.id = :id', ['id' => $contexte_id])->fetch();
                     if ($pai && $pai['utilisateur_id'] && $pai['utilisateur_id'] != $currentUser['id']) {
-                        notify((int)$pai['utilisateur_id'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a commenté votre paiement.', 'info', BASE_URL . 'client/eleve/finance.php');
+                        notify((int)$pai['utilisateur_id'], 'Nouveau commentaire', ($auteur ?: 'Administration') . ' a commenté votre paiement.', 'info', 'client/eleve/finance.php');
                     }
                 } elseif ($contexte === 'communication' && $contexte_id > 0) {
                     // Notifier tous les utilisateurs actifs pour les communications
                     $users = prepareQuery('SELECT id FROM utilisateurs WHERE actif = TRUE AND id != :uid', ['uid' => $currentUser['id']])->fetchAll();
                     foreach ($users as $u) {
-                        notify((int)$u['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté une communication.', 'info', BASE_URL . 'admin/communications/index.php');
+                        notify((int)$u['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a commenté une communication.', 'info', 'admin/communications/index.php');
                     }
                 } else {
                     // Contexte général - notifier tous les admins
                     $admins = prepareQuery("SELECT id FROM utilisateurs WHERE role = 'admin' AND actif = TRUE AND id != :uid", ['uid' => $currentUser['id']])->fetchAll();
                     foreach ($admins as $a) {
-                        notify((int)$a['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a laissé un commentaire général.', 'info', BASE_URL . 'admin/commentaires/index.php');
+                        notify((int)$a['id'], 'Nouveau commentaire', ($auteur ?: 'Un utilisateur') . ' a laissé un commentaire général.', 'info', 'admin/commentaires/index.php');
                     }
                 }
             } catch (Exception $e) {

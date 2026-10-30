@@ -10,7 +10,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_verify($_POST['csrf_token'] ??
     } else {
         prepareQuery('UPDATE notifications SET lu = TRUE WHERE user_id = :u', ['u'=>$user['id']]);
     }
-    header('Location: notifications.php');
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Marquer comme lu depuis un lien "Voir"
+if (isset($_GET['lue']) && (int)$_GET['lue'] > 0) {
+    prepareQuery('UPDATE notifications SET lu = TRUE WHERE id = :id AND user_id = :u', ['id'=>(int)$_GET['lue'], 'u'=>$user['id']]);
+    $lien = trim((string)($_GET['lien'] ?? ''));
+    if ($lien !== '') {
+        if (preg_match('#^https?://#', $lien)) {
+            header('Location: ' . $lien);
+        } else {
+            header('Location: ' . BASE_URL . ltrim($lien, '/'));
+        }
+        exit;
+    }
+    header('Location: ' . $_SERVER['PHP_SELF']);
     exit;
 }
 
@@ -56,7 +72,13 @@ if ($role === 'admin') {
                             </div>
                             <?php if ($n['message']): ?><div class="text-muted small mt-1"><?= nl2br(e($n['message'])) ?></div><?php endif; ?>
                             <small class="text-muted d-block mt-1"><?= date('d/m/Y H:i', strtotime($n['created_at'])) ?></small>
-                            <?php if ($n['lien'] && !preg_match('#^https?://#', $n['lien'])): ?><a href="<?= BASE_URL . e($n['lien']) ?>" class="small">Voir</a><?php endif; ?>
+                            <?php if ($n['lien']): ?>
+                                <?php if (preg_match('#^https?://#', $n['lien'])): ?>
+                                    <a href="<?= e($n['lien']) ?>" class="small" onclick="fetch('notifications.php?lue=<?= $n['id'] ?>',{method:'GET'});">Voir</a>
+                                <?php else: ?>
+                                    <a href="notifications.php?lue=<?= $n['id'] ?>&lien=<?= urlencode($n['lien']) ?>" class="small">Voir</a>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </div>
                         <?php if (!$n['lu']): ?>
                             <form method="post" action="">

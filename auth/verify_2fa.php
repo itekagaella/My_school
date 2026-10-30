@@ -31,7 +31,7 @@ if (!isset($_SESSION['pending_2fa']) || empty($_SESSION['pending_2fa'])) {
         header('Location: ' . BASE_URL . $target);
         exit;
     }
-    header('Location: ' . BASE_URL . 'index.php');
+    header('Location: ' . BASE_URL . '../index.php');
     exit;
 }
 
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (!$user || empty($user['dernier_code_otp']) || $user['dernier_code_exp'] < date('Y-m-d H:i:s', time())) {
                     unset($_SESSION['pending_2fa'], $_SESSION['2fa_attempts'], $_SESSION['otp_demo'], $_SESSION['2fa_user_meta'], $_SESSION['pending_2fa_user_role']);
-                    header('Location: ' . BASE_URL . 'index.php');
+                    header('Location: ' . BASE_URL . '../index.php');
                     exit;
                 }
 
